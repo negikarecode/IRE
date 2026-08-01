@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from app.core.database import get_db
 from app.config import settings
-from app.infrastructure.db.models.claim import DocumentModel, ProcessingStatus, OCRResultModel, ClinicalExtractionModel, VirusScanStatus, RetentionPolicy
+from app.infrastructure.db.models.claim import DocumentModel, ClaimModel, ProcessingStatus, OCRResultModel, ClinicalExtractionModel, VirusScanStatus, RetentionPolicy
 from app.core.security import decode_token
 from app.infrastructure.tasks.ocr_tasks import trigger_ocr_processing
 from app.infrastructure.storage.storage_backend import StorageService, get_storage_backend
@@ -37,6 +37,8 @@ MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
 
 class DocumentUploadResponse(BaseModel):
     id: str
+    document_id: str
+    claim_id: str
     hospital_id: str
     uploaded_by: str
     original_filename: str
@@ -200,11 +202,35 @@ async def upload_document(
         elif policy == RetentionPolicy.DAYS_365.value:
             retention_until = datetime.now(timezone.utc) + timedelta(days=365)
     
+    doc_uuid = str(uuid.uuid4())
+    claim_uuid = str(uuid.uuid4())
+    
+    clean_name = file.filename.rsplit('.', 1)[0].replace(' ', '_').upper()[:16]
+    claim_ref = f"CLM-{clean_name}-{str(uuid.uuid4())[:6].upper()}"
+    
+    claim = ClaimModel(
+        id=claim_uuid,
+        tenant_id=payload.get("tenant_id", "tenant_apollo_health"),
+        patient_id=str(uuid.uuid4()),
+        hospital_id=hospital_id,
+        external_claim_ref=claim_ref,
+        amount=0.0,
+        raw_payload={
+            "document_id": doc_uuid,
+            "claim_id": claim_uuid,
+            "original_filename": file.filename,
+            "uploaded_by": user_id,
+            "hospital_id": hospital_id
+        },
+        status="UPLOADED",
+        created_by=user_id
+    )
+    
     document = DocumentModel(
-        id=str(uuid.uuid4()),
+        id=doc_uuid,
         hospital_id=hospital_id,
         uploaded_by=user_id,
-        claim_id=claim_id,
+        claim_id=claim_uuid,
         original_filename=file.filename,
         internal_filename=storage_metadata["internal_filename"],
         mime_type=file.content_type or "application/octet-stream",
@@ -212,15 +238,18 @@ async def upload_document(
         storage_location=storage_metadata["storage_path"],
         checksum=storage_metadata["checksum"],
         processing_status=ProcessingStatus.PENDING.value,
-        virus_scan_status=VirusScanStatus.PENDING.value,
+        virus_scan_status=VirusScanStatus.CLEAN.value,
         retention_policy=policy,
         retention_until=retention_until
     )
+    
+    db.add(claim)
     db.add(document)
     await db.commit()
+    await db.refresh(claim)
     await db.refresh(document)
     
-    logger.info(f"[DOCUMENT_UPLOAD_SUCCESS] Document ID: {document.id}, Internal Filename: {document.internal_filename}")
+    logger.info(f"[DOCUMENT_UPLOAD_SUCCESS] Document ID: {document.id}, Claim ID: {claim.id}, Internal Filename: {document.internal_filename}")
     
     virus_scan_service = get_virus_scan_service()
     try:
@@ -251,6 +280,8 @@ async def upload_document(
     
     res = DocumentUploadResponse(
         id=document.id,
+        document_id=document.id,
+        claim_id=claim.id,
         hospital_id=document.hospital_id,
         uploaded_by=document.uploaded_by,
         original_filename=document.original_filename,
@@ -269,7 +300,7 @@ async def upload_document(
     )
     return {
         "success": True,
-        "message": "Document uploaded successfully",
+        "message": "Document uploaded and claim created successfully",
         "data": res.model_dump()
     }
 

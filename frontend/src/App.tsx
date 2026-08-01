@@ -13,9 +13,10 @@ import { SignupPage } from './pages/SignupPage';
 import { DocumentUpload } from './components/DocumentUpload';
 import { ClaimProcessingPage } from './pages/ClaimProcessingPage';
 import { claimStore, ClaimRecord } from './services/store';
+import { apiClient } from './services/api';
 import { 
   UploadCloud, FileCheck, ShieldAlert, ArrowRight, CheckCircle, 
-  Sparkles, FileText, GitPullRequest, DollarSign, RotateCcw, FileSpreadsheet
+  Sparkles, FileText, GitPullRequest, DollarSign, FileSpreadsheet
 } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -80,48 +81,34 @@ export const App: React.FC = () => {
     return <LoginPage onLoginSuccess={handleLoginSuccess} onNavigateToSignup={() => setAuthView('signup')} />;
   }
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
     setIsUploading(true);
-    setUploadProgress(20);
-    setUploadStep(`Extracting OCR text from ${file.name}...`);
+    setUploadProgress(25);
+    setUploadStep(`Uploading ${file.name} to storage...`);
 
-    setTimeout(() => {
-      setUploadProgress(50);
-      setUploadStep('Parsing CPT-4, ICD-10 & NCCI edits...');
-    }, 600);
-
-    setTimeout(() => {
-      setUploadProgress(80);
-      setUploadStep('Running Star Health TPA scrubber ruleset...');
-    }, 1200);
-
-    setTimeout(() => {
+    try {
+      setUploadProgress(60);
+      setUploadStep('Creating Document & linked Claim database records...');
+      const res = await apiClient.uploadDocument(file);
+      
       setUploadProgress(100);
-      setUploadStep('Claim Created & AI Scrubber Complete! Redirecting to Claim Review...');
-      claimStore.ingestDocument(file);
-    }, 1700);
-
-    setTimeout(() => {
+      setUploadStep('Upload Complete! Redirecting to Claim Review...');
+      const claimId = res.claim_id || res.id || res.document_id;
+      
+      setTimeout(() => {
+        setIsUploading(false);
+        window.location.href = `/claim-review/${claimId}`;
+      }, 500);
+    } catch (err: any) {
+      console.error('Upload failed:', err);
+      alert(`Upload failed: ${err.message || 'Error uploading file'}`);
       setIsUploading(false);
-      setCurrentTab('claim-review');
-    }, 2200);
+    }
   };
 
   const handleSimulateFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       handleFileUpload(e.target.files[0]);
-    }
-  };
-
-  const handleDemoUploadClick = () => {
-    const dummyFile = new File(['Sample Claim Discharge Content'], 'Discharge_Summary_Operative_Report_0728.pdf', { type: 'application/pdf' });
-    handleFileUpload(dummyFile);
-  };
-
-  const handleResetToCleanSaaS = () => {
-    if (confirm('Reset workspace to clean empty state? All uploaded claims and data will be cleared.')) {
-      claimStore.clearAllDataForTesting();
-      setCurrentTab('dashboard');
     }
   };
 
@@ -140,24 +127,13 @@ export const App: React.FC = () => {
           <Routes>
             <Route path="/claim-processing" element={<ClaimProcessingPage />} />
             <Route path="/claim-review" element={<ClaimReviewPage onNavigateTab={setCurrentTab} />} />
+            <Route path="/claim-review/:claimId" element={<ClaimReviewPage onNavigateTab={setCurrentTab} />} />
           </Routes>
           
           {/* DASHBOARD TAB */}
           {currentTab === 'dashboard' && (
             <div style={{ maxWidth: '980px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
               
-              {/* Reset to Empty Workspace Quick Button */}
-              {claims.length > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button
-                    onClick={handleResetToCleanSaaS}
-                    style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#64748b', padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                  >
-                    <RotateCcw size={12} /> Clear Session (Reset to Empty SaaS Workspace)
-                  </button>
-                </div>
-              )}
-
               {/* KPI CARDS - Show actual data or zeros */}
               <div className="kpi-row">
                 <div className="kpi-box">
@@ -173,7 +149,7 @@ export const App: React.FC = () => {
                   <div className="kpi-num" style={{ color: '#10b981' }}>
                     {analytics.claimsReady}
                   </div>
-                  <div className="kpi-trend">Zero Compliance Blockers</div>
+                  <div className="kpi-trend">Validated & Passed</div>
                 </div>
 
                 <div className="kpi-box">
@@ -187,10 +163,8 @@ export const App: React.FC = () => {
 
               {/* LARGE UPLOAD AREA */}
               <DocumentUpload 
-                onUploadComplete={(documentId) => {
-                  // Handle document upload completion
-                  // Redirect to claim processing page
-                  window.location.href = `/claim-processing?documentId=${documentId}`;
+                onUploadComplete={(docId, claimId) => {
+                  window.location.href = `/claim-review/${claimId}`;
                 }}
               />
 
@@ -254,9 +228,9 @@ export const App: React.FC = () => {
                   <div style={{ width: '64px', height: '64px', background: 'rgba(0, 242, 254, 0.12)', borderRadius: '18px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#00f2fe', marginBottom: '20px' }}>
                     <UploadCloud size={34} />
                   </div>
-                  <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', margin: '0 0 8px 0' }}>Upload Claim PDF & Clinical Documents</h2>
+                  <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', margin: '0 0 8px 0' }}>Upload Hospital PDF Document</h2>
                   <p style={{ color: '#94a3b8', fontSize: '0.92rem', maxWidth: '520px', margin: '0 auto 28px auto', lineHeight: 1.5 }}>
-                    Upload CMS-1500, UB-04, Pre-Auth Letters, or Discharge Summaries to automatically store documents, run AI compliance audit, and auto-redirect to Claim Review.
+                    Upload CMS-1500, UB-04, Pre-Auth Letters, or Discharge Summaries to automatically store documents, create database claim records, and view in Claim Review.
                   </p>
 
                   <label 
@@ -296,20 +270,13 @@ export const App: React.FC = () => {
                       <Sparkles size={18} /> Upload PDF & Ingest Claim
                       <input type="file" onChange={handleSimulateFileSelect} style={{ display: 'none' }} accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" />
                     </label>
-
-                    <button
-                      onClick={handleDemoUploadClick}
-                      style={{ background: 'rgba(255,255,255,0.06)', color: '#fff', border: '1px solid rgba(255,255,255,0.12)', padding: '12px 20px', borderRadius: '10px', fontWeight: 600, fontSize: '0.86rem', cursor: 'pointer' }}
-                    >
-                      Process Sample Operative PDF
-                    </button>
                   </div>
                 </div>
               ) : (
                 <div className="gh-card" style={{ padding: '60px 40px', textAlign: 'center' }}>
                   <div style={{ width: '60px', height: '60px', borderRadius: '50%', border: '4px solid rgba(0,242,254,0.2)', borderTop: '4px solid #00f2fe', animation: 'spin 1s linear infinite', margin: '0 auto 24px auto' }} />
                   <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#fff', margin: '0 0 10px 0' }}>
-                    Autonomous AI Claim Processing Pipeline
+                    Document Storage & Claim Record Pipeline
                   </h3>
                   <p style={{ color: '#00f2fe', fontWeight: 700, fontSize: '0.92rem', fontFamily: 'var(--font-mono)', margin: '0 0 20px 0' }}>
                     {uploadStep}

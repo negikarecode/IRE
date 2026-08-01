@@ -11,7 +11,7 @@ interface UploadFile {
 }
 
 interface DocumentUploadProps {
-  onUploadComplete?: (documentId: string) => void;
+  onUploadComplete?: (documentId: string, claimId: string) => void;
   hospitalId?: string;
 }
 
@@ -118,13 +118,15 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadComplete
         if (xhr.status === 201) {
           const raw = JSON.parse(xhr.responseText);
           const response = raw.data || raw;
-          const docId = response.id || response.document_id;
+          const docId = response.document_id || response.id;
+          const claimId = response.claim_id || docId;
           setFiles(prev => prev.map(f => 
             f.id === uploadFile.id ? { ...f, status: 'success', progress: 100 } : f
           ));
           if (onUploadComplete) {
-            onUploadComplete(docId);
+            onUploadComplete(docId, claimId);
           }
+          window.location.href = `/claim-review/${claimId}`;
         } else {
           let errMsg = 'Upload failed';
           try {

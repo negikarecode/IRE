@@ -5,7 +5,7 @@ from typing import List, Dict, Any, Optional
 from app.core.database import get_db
 from app.core.dependencies import get_tenant_header
 from app.application.schemas.domain_schemas import ClaimCreate, ClaimResponse
-from app.infrastructure.db.models.claim import ClaimModel
+from app.infrastructure.db.models.claim import ClaimModel, DocumentModel
 from app.domain.interfaces.i_claim_processor import IClaimProcessor
 from app.core.security import decode_token
 from app.infrastructure.services.validation_service import get_validation_service
@@ -220,4 +220,49 @@ async def list_claims(
         "success": True,
         "message": "Claims retrieved successfully",
         "data": data
+    }
+
+@router.get("/{claim_id}", status_code=status.HTTP_200_OK)
+async def get_claim_by_id(
+    claim_id: str,
+    authorization: Optional[str] = Header(None),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get a single claim record by ID or external_claim_ref from the database.
+    """
+    stmt = select(ClaimModel).where(ClaimModel.id == claim_id)
+    result = await db.execute(stmt)
+    claim = result.scalar_one_or_none()
+    
+    if not claim:
+        stmt_ref = select(ClaimModel).where(ClaimModel.external_claim_ref == claim_id)
+        result_ref = await db.execute(stmt_ref)
+        claim = result_ref.scalar_one_or_none()
+        
+    if not claim:
+        raise NotFoundException(message=f"Claim '{claim_id}' not found in database")
+        
+    # Get associated document info if present
+    doc_stmt = select(DocumentModel).where(DocumentModel.claim_id == claim.id)
+    doc_res = await db.execute(doc_stmt)
+    document = doc_res.scalar_one_or_none()
+    
+    if not document and isinstance(claim.raw_payload, dict) and claim.raw_payload.get("document_id"):
+        doc_stmt = select(DocumentModel).where(DocumentModel.id == claim.raw_payload.get("document_id"))
+        doc_res = await db.execute(doc_stmt)
+        document = doc_res.scalar_one_or_none()
+    
+    claim_dict = ClaimResponse.model_validate(claim).model_dump()
+    if document:
+        claim_dict["document_id"] = document.id
+        claim_dict["document_filename"] = document.original_filename
+        claim_dict["document_status"] = document.processing_status
+        claim_dict["mime_type"] = document.mime_type
+        claim_dict["file_size_bytes"] = document.file_size_bytes
+
+    return {
+        "success": True,
+        "message": "Claim retrieved successfully",
+        "data": claim_dict
     }

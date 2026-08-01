@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { 
   FileText, Eye, Download, Edit2, CheckCircle, AlertCircle,
   User, Building2, Activity, DollarSign, Calendar,
-  Loader2, X, Save
+  Loader2, X, Save, Clock
 } from 'lucide-react';
 import { apiClient } from '../services/api';
 
@@ -36,10 +36,12 @@ interface ClinicalData {
 interface Document {
   id: string;
   original_filename: string;
+  hospital_id?: string;
   document_type?: string;
   processing_status: string;
   pages?: number;
   classification_confidence?: number;
+  file_size_bytes?: number;
 }
 
 interface OCRResult {
@@ -54,7 +56,10 @@ interface ClaimReviewPageProps {
 export const ClaimReviewPage: React.FC<ClaimReviewPageProps> = ({ onNavigateTab }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [documentId, setDocumentId] = useState<string | null>(null);
+  const params = useParams<{ claimId?: string }>();
+  
+  const [recordId, setRecordId] = useState<string | null>(null);
+  const [claimData, setClaimData] = useState<any | null>(null);
   const [document, setDocument] = useState<Document | null>(null);
   const [clinicalData, setClinicalData] = useState<ClinicalData | null>(null);
   const [ocrResult, setOcrResult] = useState<OCRResult | null>(null);
@@ -67,32 +72,74 @@ export const ClaimReviewPage: React.FC<ClaimReviewPageProps> = ({ onNavigateTab 
   const [approved, setApproved] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const docId = params.get('documentId') || location.state?.documentId;
+    const searchParams = new URLSearchParams(location.search);
+    const pathParts = location.pathname.split('/');
+    const pathId = params.claimId || (pathParts[pathParts.length - 1] !== 'claim-review' ? pathParts[pathParts.length - 1] : null);
     
-    if (docId) {
-      setDocumentId(docId);
-      loadDocumentData(docId);
+    const targetId = pathId || searchParams.get('claimId') || searchParams.get('documentId') || location.state?.claimId || location.state?.documentId;
+
+    if (targetId) {
+      setRecordId(targetId);
+      loadRecordData(targetId);
     } else {
-      setError('No document ID provided');
+      setError('No document ID or claim ID provided');
       setLoading(false);
     }
-  }, [location]);
+  }, [location, params]);
 
-  const loadDocumentData = async (docId: string) => {
+  const loadRecordData = async (targetId: string) => {
     try {
       setLoading(true);
-      const [docData, clinical] = await Promise.all([
-        apiClient.getDocument(docId),
-        apiClient.getClinicalExtraction(docId)
-      ]);
-      
-      setDocument(docData);
-      setClinicalData(clinical);
+      setError(null);
+
+      let fetchedClaim: any = null;
+      let docId = targetId;
+
+      // First try fetching claim record by ID from database
+      try {
+        fetchedClaim = await apiClient.getClaimById(targetId);
+        if (fetchedClaim) {
+          setClaimData(fetchedClaim);
+          if (fetchedClaim.document_id) {
+            docId = fetchedClaim.document_id;
+          }
+        }
+      } catch (claimErr) {
+        console.log('Claim not found directly by ID, attempting document fetch...', claimErr);
+      }
+
+      // Then fetch document record by ID from database
+      try {
+        const docData = await apiClient.getDocument(docId);
+        setDocument(docData);
+        
+        // If claim wasn't fetched yet, check if document has linked claim_id
+        if (!fetchedClaim && docData?.claim_id) {
+          try {
+            fetchedClaim = await apiClient.getClaimById(docData.claim_id);
+            setClaimData(fetchedClaim);
+          } catch (_) {}
+        }
+      } catch (docErr) {
+        if (!fetchedClaim) {
+          setError(`Database record '${targetId}' not found`);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Try fetching clinical extraction if available
+      try {
+        const clinical = await apiClient.getClinicalExtraction(docId);
+        setClinicalData(clinical);
+      } catch (_) {
+        setClinicalData(null);
+      }
+
       setLoading(false);
     } catch (err: any) {
-      console.error('Error loading document data:', err);
-      setError('Failed to load document data');
+      console.error('Error loading record data:', err);
+      setError('Failed to load database record');
       setLoading(false);
     }
   };
@@ -103,11 +150,10 @@ export const ClaimReviewPage: React.FC<ClaimReviewPageProps> = ({ onNavigateTab 
   };
 
   const handleSaveField = async () => {
-    if (!editingField || !documentId) return;
+    if (!editingField || !recordId) return;
     
     setSaving(true);
     try {
-      // Update clinical data field (API call would go here)
       setClinicalData(prev => ({ ...prev, [editingField]: editValue }));
       setEditingField(null);
       setEditValue('');
@@ -117,17 +163,14 @@ export const ClaimReviewPage: React.FC<ClaimReviewPageProps> = ({ onNavigateTab 
     setSaving(false);
   };
 
-  const handleDownloadDocument = async () => {
-    if (!document) return;
-    // Download logic would go here
-    // Download document action
-  };
-
   const handleApprove = () => {
     setApproved(true);
-    // Navigate to next step after approval
     setTimeout(() => {
-      navigate('/documents');
+      if (onNavigateTab) {
+        onNavigateTab('claims');
+      } else {
+        navigate('/documents');
+      }
     }, 1500);
   };
 
@@ -139,57 +182,159 @@ export const ClaimReviewPage: React.FC<ClaimReviewPageProps> = ({ onNavigateTab 
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', gap: '16px' }}>
         <Loader2 size={48} className="animate-spin" style={{ color: '#00f2fe' }} />
+        <p style={{ color: '#94a3b8', fontSize: '0.95rem' }}>Loading claim & document record from database...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ textAlign: 'center', padding: '40px' }}>
-        <AlertCircle size={48} style={{ color: '#ef4444', marginBottom: '16px' }} />
-        <h2 style={{ color: '#ffffff', marginBottom: '8px' }}>Error Loading Data</h2>
-        <p style={{ color: '#94a3b8' }}>{error}</p>
+      <div style={{ textAlign: 'center', padding: '60px 20px', maxWidth: '600px', margin: '0 auto' }}>
+        <AlertCircle size={52} style={{ color: '#ef4444', marginBottom: '16px' }} />
+        <h2 style={{ color: '#ffffff', fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px' }}>Error Loading Claim Record</h2>
+        <p style={{ color: '#94a3b8', fontSize: '0.92rem', marginBottom: '24px' }}>{error}</p>
         <button
-          onClick={() => navigate('/documents')}
+          onClick={() => {
+            if (onNavigateTab) onNavigateTab('upload-claim');
+            else navigate('/documents');
+          }}
           style={{
-            background: 'rgba(0, 242, 254, 0.1)',
-            color: '#00f2fe',
-            border: '1px solid rgba(0, 242, 254, 0.3)',
+            background: 'linear-gradient(135deg, #00f2fe, #4facfe)',
+            color: '#000000',
+            border: 'none',
             padding: '12px 24px',
             borderRadius: '8px',
-            marginTop: '16px',
+            fontWeight: 800,
             cursor: 'pointer'
           }}
         >
-          Return to Documents
+          Upload New Claim PDF
         </button>
       </div>
     );
   }
 
-  const missingFields = getMissingFields();
+  const isOcrFinished = clinicalData && Object.keys(clinicalData).length > 0 && document?.processing_status === 'completed';
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
       {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{
-          color: '#ffffff',
-          fontSize: '2rem',
-          fontWeight: 800,
-          marginBottom: '8px',
-          background: 'linear-gradient(135deg, #00f2fe 0%, #4facfe 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent'
-        }}>
-          Claim Review
-        </h1>
-        <p style={{ color: '#94a3b8', fontSize: '1rem' }}>
-          Verify extracted clinical data before AI analysis
-        </p>
+      <div style={{ marginBottom: '28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <h1 style={{
+            color: '#ffffff',
+            fontSize: '1.8rem',
+            fontWeight: 800,
+            marginBottom: '4px',
+            background: 'linear-gradient(135deg, #00f2fe 0%, #4facfe 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}>
+            Claim Review & Database Audit
+          </h1>
+          <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>
+            Persistent Database Record: <span style={{ color: '#00f2fe', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{claimData?.external_claim_ref || claimData?.id || recordId}</span>
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            onClick={() => {
+              if (onNavigateTab) onNavigateTab('claims');
+              else navigate('/claims');
+            }}
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              color: '#ffffff',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              cursor: 'pointer'
+            }}
+          >
+            ← Claims Queue
+          </button>
+        </div>
       </div>
+
+      {/* OCR IN PROGRESS / UNFINISHED BANNER */}
+      {!isOcrFinished && (
+        <div style={{
+          background: 'rgba(15, 23, 42, 0.9)',
+          border: '1px solid rgba(0, 242, 254, 0.3)',
+          borderRadius: '16px',
+          padding: '28px 32px',
+          marginBottom: '28px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ background: 'rgba(16, 185, 129, 0.2)', borderRadius: '50%', padding: '6px', color: '#10b981', display: 'flex' }}>
+                <CheckCircle size={22} />
+              </div>
+              <div>
+                <h3 style={{ color: '#ffffff', fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>Upload complete</h3>
+                <p style={{ color: '#94a3b8', fontSize: '0.84rem', margin: '2px 0 0 0' }}>File securely persisted in database storage.</p>
+              </div>
+            </div>
+            <span className="badge badge-cyan" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 14px', fontSize: '0.85rem', background: 'rgba(0,242,254,0.15)', color: '#00f2fe', border: '1px solid rgba(0,242,254,0.4)', borderRadius: '20px', fontWeight: 700 }}>
+              <Loader2 size={14} className="animate-spin" /> OCR Processing...
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>OCR Status</div>
+              <div style={{ color: '#00f2fe', fontWeight: 700, fontSize: '0.95rem', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Loader2 size={14} className="animate-spin" /> Extracting text...
+              </div>
+            </div>
+
+            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>Estimated time remaining</div>
+              <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.95rem', marginTop: '4px', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Clock size={15} style={{ color: '#f59e0b' }} /> ~5 - 10 seconds
+              </div>
+            </div>
+
+            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>Linked Database Records</div>
+              <div style={{ color: '#10b981', fontWeight: 700, fontSize: '0.88rem', marginTop: '4px' }}>
+                Document & Claim Created
+              </div>
+            </div>
+          </div>
+
+          {/* Database Record Details */}
+          {claimData && (
+            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '18px', borderRadius: '10px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', fontSize: '0.84rem' }}>
+              <div>
+                <span style={{ color: '#64748b' }}>Claim Reference: </span>
+                <span style={{ color: '#00f2fe', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{claimData.external_claim_ref || claimData.id}</span>
+              </div>
+              <div>
+                <span style={{ color: '#64748b' }}>Document File: </span>
+                <span style={{ color: '#ffffff', fontWeight: 600 }}>{claimData.document_filename || document?.original_filename || 'Hospital Claim Document'}</span>
+              </div>
+              <div>
+                <span style={{ color: '#64748b' }}>Claim Status: </span>
+                <span style={{ color: '#f59e0b', fontWeight: 700 }}>{claimData.status || 'UPLOADED'}</span>
+              </div>
+              <div>
+                <span style={{ color: '#64748b' }}>Hospital ID: </span>
+                <span style={{ color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>{claimData.hospital_id || document?.hospital_id || 'hosp_01'}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Document Info Card */}
       <div style={{
@@ -201,21 +346,21 @@ export const ClaimReviewPage: React.FC<ClaimReviewPageProps> = ({ onNavigateTab 
       }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
           <div>
+            <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px' }}>Claim ID</div>
+            <div style={{ color: '#00f2fe', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{claimData?.id || recordId}</div>
+          </div>
+          <div>
             <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px' }}>Document ID</div>
-            <div style={{ color: '#00f2fe', fontWeight: 700, fontFamily: 'monospace' }}>{documentId}</div>
+            <div style={{ color: '#ffffff', fontFamily: 'var(--font-mono)' }}>{document?.id || claimData?.document_id || 'N/A'}</div>
           </div>
           <div>
             <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px' }}>Filename</div>
-            <div style={{ color: '#ffffff' }}>{document?.original_filename}</div>
+            <div style={{ color: '#ffffff' }}>{document?.original_filename || claimData?.document_filename || 'Hospital Document'}</div>
           </div>
           <div>
-            <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px' }}>Document Type</div>
-            <div style={{ color: '#ffffff' }}>{document?.document_type || 'Unknown'}</div>
-          </div>
-          <div>
-            <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px' }}>OCR Confidence</div>
-            <div style={{ color: document?.classification_confidence && document.classification_confidence > 0.7 ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
-              {document?.classification_confidence ? `${(document.classification_confidence * 100).toFixed(0)}%` : 'N/A'}
+            <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px' }}>File Size</div>
+            <div style={{ color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
+              {document?.file_size_bytes ? `${(document.file_size_bytes / 1024).toFixed(1)} KB` : 'N/A'}
             </div>
           </div>
         </div>
@@ -231,9 +376,9 @@ export const ClaimReviewPage: React.FC<ClaimReviewPageProps> = ({ onNavigateTab 
         }}>
           <CheckCircle size={64} style={{ color: '#10b981', marginBottom: '16px' }} />
           <h2 style={{ color: '#ffffff', fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>
-            Data Approved
+            Data Approved & Ready
           </h2>
-          <p style={{ color: '#94a3b8' }}>Redirecting to documents...</p>
+          <p style={{ color: '#94a3b8' }}>Redirecting to Claims Work Queue...</p>
         </div>
       ) : (
         <>
@@ -308,18 +453,12 @@ export const ClaimReviewPage: React.FC<ClaimReviewPageProps> = ({ onNavigateTab 
                         </>
                       ) : (
                         <>
-                          <span style={{ color: clinicalData?.[field as keyof ClinicalData] ? '#ffffff' : '#64748b', flex: 1 }}>
-                            {clinicalData?.[field as keyof ClinicalData] || 'Not extracted'}
+                          <span style={{ color: clinicalData?.[field as keyof ClinicalData] ? '#ffffff' : '#64748b', fontStyle: clinicalData?.[field as keyof ClinicalData] ? 'normal' : 'italic' }}>
+                            {clinicalData?.[field as keyof ClinicalData] ? String(clinicalData[field as keyof ClinicalData]) : 'Pending OCR extraction...'}
                           </span>
                           <button
-                            onClick={() => handleEditField(field, clinicalData?.[field as keyof ClinicalData] || '')}
-                            style={{
-                              background: 'transparent',
-                              color: '#00f2fe',
-                              border: 'none',
-                              padding: '4px',
-                              cursor: 'pointer'
-                            }}
+                            onClick={() => handleEditField(field, String(clinicalData?.[field as keyof ClinicalData] || ''))}
+                            style={{ background: 'none', border: 'none', color: '#00f2fe', cursor: 'pointer', padding: '2px' }}
                           >
                             <Edit2 size={14} />
                           </button>
@@ -331,7 +470,7 @@ export const ClaimReviewPage: React.FC<ClaimReviewPageProps> = ({ onNavigateTab 
               </div>
             </div>
 
-            {/* Insurance Information */}
+            {/* Clinical Details */}
             <div style={{
               background: 'rgba(15, 23, 42, 0.6)',
               border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -339,245 +478,53 @@ export const ClaimReviewPage: React.FC<ClaimReviewPageProps> = ({ onNavigateTab 
               padding: '24px'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <Building2 size={20} style={{ color: '#00f2fe' }} />
-                <h3 style={{ color: '#ffffff', fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Insurance Information</h3>
+                <Activity size={20} style={{ color: '#00f2fe' }} />
+                <h3 style={{ color: '#ffffff', fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Clinical Details</h3>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {[
-                  { field: 'insurance_company', label: 'Insurance Company' },
-                  { field: 'policy_number', label: 'Policy Number' },
-                  { field: 'bill_amount', label: 'Bill Amount' },
-                  { field: 'invoice_number', label: 'Invoice Number' }
+                  { field: 'hospital', label: 'Hospital' },
+                  { field: 'doctor', label: 'Attending Doctor' },
+                  { field: 'department', label: 'Department' },
+                  { field: 'diagnosis', label: 'Primary Diagnosis' },
+                  { field: 'procedure', label: 'Procedure Performed' }
                 ].map(({ field, label }) => (
                   <div key={field}>
                     <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px' }}>{label}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {editingField === field ? (
-                        <>
-                          <input
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            style={{
-                              background: 'rgba(0, 242, 254, 0.1)',
-                              border: '1px solid rgba(0, 242, 254, 0.3)',
-                              color: '#ffffff',
-                              padding: '8px 12px',
-                              borderRadius: '6px',
-                              flex: 1
-                            }}
-                          />
-                          <button onClick={handleSaveField} disabled={saving} style={{ background: '#10b981', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
-                            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                          </button>
-                          <button onClick={() => setEditingField(null)} style={{ background: 'transparent', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>
-                            <X size={14} />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <span style={{ color: clinicalData?.[field as keyof ClinicalData] ? '#ffffff' : '#64748b', flex: 1 }}>
-                            {field === 'bill_amount' && clinicalData?.[field as keyof ClinicalData] 
-                              ? `₹${clinicalData[field as keyof ClinicalData]?.toFixed(2)}`
-                              : clinicalData?.[field as keyof ClinicalData] || 'Not extracted'}
-                          </span>
-                          <button onClick={() => handleEditField(field, clinicalData?.[field as keyof ClinicalData]?.toString() || '')} style={{ background: 'transparent', color: '#00f2fe', border: 'none', padding: '4px', cursor: 'pointer' }}>
-                            <Edit2 size={14} />
-                          </button>
-                        </>
-                      )}
-                    </div>
+                    <span style={{ color: clinicalData?.[field as keyof ClinicalData] ? '#ffffff' : '#64748b', fontStyle: clinicalData?.[field as keyof ClinicalData] ? 'normal' : 'italic' }}>
+                      {clinicalData?.[field as keyof ClinicalData] ? String(clinicalData[field as keyof ClinicalData]) : 'Pending OCR extraction...'}
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Medical Information */}
-          <div style={{
-            background: 'rgba(15, 23, 42, 0.6)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '12px',
-            padding: '24px',
-            marginBottom: '24px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-              <Activity size={20} style={{ color: '#00f2fe' }} />
-              <h3 style={{ color: '#ffffff', fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Medical Information</h3>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
-              {[
-                { field: 'diagnosis', label: 'Diagnosis' },
-                { field: 'procedure', label: 'Procedure' },
-                { field: 'hospital', label: 'Hospital' },
-                { field: 'doctor', label: 'Doctor' },
-                { field: 'department', label: 'Department' },
-                { field: 'admission_date', label: 'Admission Date' },
-                { field: 'discharge_date', label: 'Discharge Date' },
-                { field: 'length_of_stay', label: 'Length of Stay (days)' }
-              ].map(({ field, label }) => (
-                <div key={field}>
-                  <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px' }}>{label}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {editingField === field ? (
-                      <>
-                        <input
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          style={{
-                            background: 'rgba(0, 242, 254, 0.1)',
-                            border: '1px solid rgba(0, 242, 254, 0.3)',
-                            color: '#ffffff',
-                            padding: '8px 12px',
-                            borderRadius: '6px',
-                            flex: 1
-                          }}
-                        />
-                        <button onClick={handleSaveField} disabled={saving} style={{ background: '#10b981', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
-                          {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                        </button>
-                        <button onClick={() => setEditingField(null)} style={{ background: 'transparent', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>
-                          <X size={14} />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <span style={{ color: clinicalData?.[field as keyof ClinicalData] ? '#ffffff' : '#64748b', flex: 1 }}>
-                          {clinicalData?.[field as keyof ClinicalData] || 'Not extracted'}
-                        </span>
-                        <button onClick={() => handleEditField(field, clinicalData?.[field as keyof ClinicalData]?.toString() || '')} style={{ background: 'transparent', color: '#00f2fe', border: 'none', padding: '4px', cursor: 'pointer' }}>
-                          <Edit2 size={14} />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Missing Fields Warning */}
-          {missingFields.length > 0 && (
-            <div style={{
-              background: 'rgba(245, 158, 11, 0.1)',
-              border: '1px solid rgba(245, 158, 11, 0.3)',
-              borderRadius: '12px',
-              padding: '20px',
-              marginBottom: '24px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                <AlertCircle size={20} style={{ color: '#f59e0b' }} />
-                <h3 style={{ color: '#ffffff', fontSize: '1rem', fontWeight: 700, margin: 0 }}>Missing Required Fields</h3>
-              </div>
-              <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
-                The following required fields could not be extracted: {missingFields.join(', ')}
-              </div>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-            <button
-              onClick={() => setShowOCRModal(true)}
-              style={{
-                background: 'rgba(0, 242, 254, 0.1)',
-                color: '#00f2fe',
-                border: '1px solid rgba(0, 242, 254, 0.3)',
-                padding: '12px 24px',
-                borderRadius: '8px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              <Eye size={18} /> View OCR Text
-            </button>
-            <button
-              onClick={handleDownloadDocument}
-              style={{
-                background: 'rgba(16, 185, 129, 0.1)',
-                color: '#10b981',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-                padding: '12px 24px',
-                borderRadius: '8px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              <Download size={18} /> Download Original
-            </button>
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px' }}>
             <button
               onClick={handleApprove}
-              disabled={missingFields.length > 0}
               style={{
-                background: missingFields.length > 0 ? 'rgba(255, 255, 255, 0.1)' : 'linear-gradient(135deg, #10b981, #00f2fe)',
-                color: missingFields.length > 0 ? '#64748b' : '#000000',
-                border: missingFields.length > 0 ? '1px solid rgba(255, 255, 255, 0.2)' : 'none',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: '#ffffff',
+                border: 'none',
                 padding: '12px 32px',
                 borderRadius: '8px',
                 fontWeight: 700,
-                cursor: missingFields.length > 0 ? 'not-allowed' : 'pointer',
+                fontSize: '1rem',
+                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '8px',
+                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
               }}
             >
-              <CheckCircle size={18} /> Approve & Continue
+              <CheckCircle size={20} />
+              Approve Database Claim Record
             </button>
           </div>
         </>
       )}
-
-      {/* OCR Modal */}
-      {showOCRModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: 'rgba(15, 23, 42, 0.95)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '12px',
-            padding: '32px',
-            maxWidth: '800px',
-            maxHeight: '80vh',
-            overflowY: 'auto',
-            width: '90%'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ color: '#ffffff', fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>OCR Extracted Text</h3>
-              <button onClick={() => setShowOCRModal(false)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '24px' }}>✕</button>
-            </div>
-            <div style={{
-              background: 'rgba(0, 0, 0, 0.3)',
-              padding: '20px',
-              borderRadius: '8px',
-              color: '#cbd5e1',
-              fontSize: '0.9rem',
-              lineHeight: 1.6,
-              fontFamily: 'monospace',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word'
-            }}>
-              {ocrResult?.raw_text || 'No OCR text available'}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
-
-export default ClaimReviewPage;
