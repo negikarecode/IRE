@@ -114,6 +114,20 @@ class BackendAPIClient {
     });
   }
 
+  public async retryOCR(documentId: string): Promise<any> {
+    return this.request<any>(`/ocr/async_extract`, {
+      method: 'POST',
+      body: JSON.stringify({ document_id: documentId })
+    });
+  }
+
+  public async runAIReview(claimId: string): Promise<any> {
+    return this.request<any>(`/validation/validate`, {
+      method: 'POST',
+      body: JSON.stringify({ claim_id: claimId })
+    });
+  }
+
   public async uploadDocument(file: File): Promise<any> {
     const formData = new FormData();
     formData.append('file', file);

@@ -259,7 +259,7 @@ export const ClaimProcessingPage: React.FC = () => {
             Processing Your Claim
           </h1>
           <p style={{ color: '#94a3b8', fontSize: '1.1rem' }}>
-            {estimatedTime ? `Estimated time remaining: ${estimatedTime} seconds` : 'Processing in progress...'}
+            Status: Processing in progress...
           </p>
         </div>
 
