@@ -61,7 +61,11 @@ class BackendAPIClient {
         }
         throw new Error(errorMsg);
       }
-      return await response.json();
+      const json = await response.json();
+      if (json && typeof json === 'object' && json.data !== undefined) {
+        return json.data;
+      }
+      return json;
     } catch (err: any) {
       console.error(`[Backend API Request Failed] Endpoint: ${endpoint}`, err);
       throw err;

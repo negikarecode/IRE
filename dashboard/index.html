@@ -442,8 +442,9 @@
                     throw new Error(extractBackendError(data));
                 }
 
-                sessionStorage.setItem("ire_access_token", data.access_token);
-                sessionStorage.setItem("ire_hospital_id", data.hospital_id);
+                const tokenData = data.data || data;
+                sessionStorage.setItem("ire_access_token", tokenData.access_token);
+                sessionStorage.setItem("ire_hospital_id", tokenData.hospital_id);
                 sessionStorage.setItem("ire_user_email", email);
 
                 window.location.href = "hospital-workspace.html#dashboard";
@@ -474,9 +475,10 @@
                     throw new Error(extractBackendError(data));
                 }
 
+                const tokenData = data.data || data;
                 const storage = remember ? localStorage : sessionStorage;
-                storage.setItem("ire_access_token", data.access_token);
-                storage.setItem("ire_hospital_id", data.hospital_id);
+                storage.setItem("ire_access_token", tokenData.access_token);
+                storage.setItem("ire_hospital_id", tokenData.hospital_id);
                 storage.setItem("ire_user_email", email);
 
                 window.location.href = "hospital-workspace.html#dashboard";
