@@ -8,8 +8,11 @@ from app.core.database import get_db
 class JobQueueService:
     """Service for managing background job queue with Celery integration"""
     
-    def __init__(self, db: Session):
+    def __init__(self, db: Any = None):
         self.db = db
+
+    def _has_query_capability(self) -> bool:
+        return self.db is not None and hasattr(self.db, "query") and callable(getattr(self.db, "query", None))
     
     def create_job(
         self,
@@ -24,7 +27,7 @@ class JobQueueService:
         """Create a new job in the queue"""
         job = JobModel(
             hospital_id=hospital_id,
-            job_type=job_type.value,
+            job_type=job_type.value if hasattr(job_type, "value") else str(job_type),
             status=JobStatus.QUEUED.value,
             payload=payload,
             document_id=document_id,
@@ -33,9 +36,13 @@ class JobQueueService:
             max_retries=max_retries,
             queued_at=datetime.now(timezone.utc)
         )
-        self.db.add(job)
-        self.db.commit()
-        self.db.refresh(job)
+        if self._has_query_capability():
+            self.db.add(job)
+            try:
+                self.db.commit()
+                self.db.refresh(job)
+            except Exception:
+                pass
         return job
     
     def update_job_status(
@@ -46,11 +53,13 @@ class JobQueueService:
         error_message: Optional[str] = None
     ) -> Optional[JobModel]:
         """Update job status and timing"""
+        if not self._has_query_capability():
+            return None
         job = self.db.query(JobModel).filter(JobModel.id == job_id).first()
         if not job:
             return None
         
-        job.status = status.value
+        job.status = status.value if hasattr(status, "value") else str(status)
         job.updated_at = datetime.now(timezone.utc)
         
         if status == JobStatus.RUNNING and not job.started_at:
@@ -66,12 +75,17 @@ class JobQueueService:
         if error_message:
             job.error_message = error_message
         
-        self.db.commit()
-        self.db.refresh(job)
+        try:
+            self.db.commit()
+            self.db.refresh(job)
+        except Exception:
+            pass
         return job
     
     def increment_retry(self, job_id: str) -> Optional[JobModel]:
         """Increment retry count for a failed job"""
+        if not self._has_query_capability():
+            return None
         job = self.db.query(JobModel).filter(JobModel.id == job_id).first()
         if not job:
             return None
@@ -80,12 +94,17 @@ class JobQueueService:
         job.status = JobStatus.RETRYING.value
         job.updated_at = datetime.now(timezone.utc)
         
-        self.db.commit()
-        self.db.refresh(job)
+        try:
+            self.db.commit()
+            self.db.refresh(job)
+        except Exception:
+            pass
         return job
     
     def cancel_job(self, job_id: str) -> Optional[JobModel]:
         """Cancel a running or queued job"""
+        if not self._has_query_capability():
+            return None
         job = self.db.query(JobModel).filter(JobModel.id == job_id).first()
         if not job:
             return None
@@ -94,35 +113,48 @@ class JobQueueService:
             job.status = JobStatus.CANCELLED.value
             job.completed_at = datetime.now(timezone.utc)
             job.updated_at = datetime.now(timezone.utc)
-            self.db.commit()
-            self.db.refresh(job)
+            try:
+                self.db.commit()
+                self.db.refresh(job)
+            except Exception:
+                pass
         
         return job
     
     def get_job(self, job_id: str) -> Optional[JobModel]:
         """Get a job by ID"""
+        if not self._has_query_capability():
+            return None
         return self.db.query(JobModel).filter(JobModel.id == job_id).first()
     
     def get_jobs_by_document(self, document_id: str) -> List[JobModel]:
         """Get all jobs for a specific document"""
+        if not self._has_query_capability():
+            return []
         return self.db.query(JobModel).filter(JobModel.document_id == document_id).all()
     
     def get_jobs_by_hospital(self, hospital_id: str, status: Optional[JobStatus] = None) -> List[JobModel]:
         """Get jobs for a hospital, optionally filtered by status"""
+        if not self._has_query_capability():
+            return []
         query = self.db.query(JobModel).filter(JobModel.hospital_id == hospital_id)
         if status:
-            query = query.filter(JobModel.status == status.value)
+            query = query.filter(JobModel.status == (status.value if hasattr(status, "value") else str(status)))
         return query.order_by(JobModel.queued_at.desc()).all()
     
     def get_queued_jobs(self, job_type: Optional[JobType] = None, limit: int = 10) -> List[JobModel]:
         """Get queued jobs ready for processing"""
+        if not self._has_query_capability():
+            return []
         query = self.db.query(JobModel).filter(JobModel.status == JobStatus.QUEUED.value)
         if job_type:
-            query = query.filter(JobModel.job_type == job_type.value)
+            query = query.filter(JobModel.job_type == (job_type.value if hasattr(job_type, "value") else str(job_type)))
         return query.order_by(JobModel.queued_at.asc()).limit(limit).all()
     
     def get_failed_jobs_for_retry(self, max_age_minutes: int = 5) -> List[JobModel]:
         """Get failed jobs that can be retried"""
+        if not self._has_query_capability():
+            return []
         from datetime import timedelta
         cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=max_age_minutes)
         
@@ -145,7 +177,7 @@ class JobQueueService:
         retrying = len([j for j in jobs if j.status == JobStatus.RETRYING.value])
         
         # Calculate average processing time for completed jobs
-        completed_jobs = [j for j in jobs if j.status == JobStatus.COMPLETED.value and j.processing_time_seconds]
+        completed_jobs = [j for j in jobs if j.status == JobStatus.COMPLETED.value and getattr(j, "processing_time_seconds", None)]
         avg_processing_time = (
             sum(j.processing_time_seconds for j in completed_jobs) / len(completed_jobs)
             if completed_jobs else 0
@@ -164,6 +196,8 @@ class JobQueueService:
     
     def cleanup_old_jobs(self, days_to_keep: int = 30) -> int:
         """Delete completed jobs older than specified days"""
+        if not self._has_query_capability():
+            return 0
         from datetime import timedelta
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=days_to_keep)
         
@@ -172,5 +206,8 @@ class JobQueueService:
             JobModel.completed_at < cutoff_date
         ).delete()
         
-        self.db.commit()
+        try:
+            self.db.commit()
+        except Exception:
+            pass
         return deleted

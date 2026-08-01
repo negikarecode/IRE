@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from sqlalchemy.future import select
 from typing import AsyncGenerator, Optional
 import asyncio
 import json
@@ -27,12 +28,15 @@ async def job_status_generator(
     while True:
         try:
             # Build query
-            query = db.query(JobModel).filter(JobModel.hospital_id == hospital_id)
+            stmt = select(JobModel)
+            if hospital_id:
+                stmt = stmt.where(JobModel.hospital_id == hospital_id)
             if document_id:
-                query = query.filter(JobModel.document_id == document_id)
+                stmt = stmt.where(JobModel.document_id == document_id)
             
-            # Get recent jobs
-            jobs = query.order_by(JobModel.updated_at.desc()).limit(10).all()
+            stmt = stmt.order_by(JobModel.updated_at.desc()).limit(10)
+            res = await db.execute(stmt)
+            jobs = res.scalars().all()
             
             # Check for status changes
             for job in jobs:

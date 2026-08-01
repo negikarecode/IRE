@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime, timezone
@@ -57,13 +59,15 @@ from app.core.exceptions import NotFoundException, ForbiddenException, BadReques
 
 # API Endpoints
 @router.get("", status_code=200)
+@router.get("", status_code=200)
+@router.get("/", status_code=200)
 async def get_jobs(
     status: Optional[str] = Query(None, description="Filter by job status"),
     job_type: Optional[str] = Query(None, description="Filter by job type"),
     document_id: Optional[str] = Query(None, description="Filter by document ID"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """
@@ -71,16 +75,19 @@ async def get_jobs(
     """
     hospital_id = getattr(current_user, "hospital_id", current_user.get("hospital_id") if isinstance(current_user, dict) else None)
     
-    query = db.query(JobModel).filter(JobModel.hospital_id == hospital_id)
-    
+    stmt = select(JobModel)
+    if hospital_id:
+        stmt = stmt.where(JobModel.hospital_id == hospital_id)
     if status:
-        query = query.filter(JobModel.status == status)
+        stmt = stmt.where(JobModel.status == status)
     if job_type:
-        query = query.filter(JobModel.job_type == job_type)
+        stmt = stmt.where(JobModel.job_type == job_type)
     if document_id:
-        query = query.filter(JobModel.document_id == document_id)
+        stmt = stmt.where(JobModel.document_id == document_id)
     
-    jobs = query.order_by(JobModel.queued_at.desc()).offset(skip).limit(limit).all()
+    stmt = stmt.order_by(JobModel.queued_at.desc()).offset(skip).limit(limit)
+    res = await db.execute(stmt)
+    jobs = res.scalars().all()
     data = [JobResponse.model_validate(j).model_dump() for j in jobs]
     return {
         "success": True,
