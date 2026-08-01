@@ -1,6 +1,7 @@
 import os
 import uuid
 import logging
+import hashlib
 import aiofiles
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status, Header

@@ -116,19 +116,23 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadComplete
 
       xhr.addEventListener('load', () => {
         if (xhr.status === 201) {
-          const response = JSON.parse(xhr.responseText);
+          const raw = JSON.parse(xhr.responseText);
+          const response = raw.data || raw;
+          const docId = response.id || response.document_id;
           setFiles(prev => prev.map(f => 
             f.id === uploadFile.id ? { ...f, status: 'success', progress: 100 } : f
           ));
           if (onUploadComplete) {
-            onUploadComplete(response.id);
+            onUploadComplete(docId);
           }
-          // Navigate to claim processing page
-          window.location.href = `/claim-processing?documentId=${response.id}`;
         } else {
-          const error = JSON.parse(xhr.responseText);
+          let errMsg = 'Upload failed';
+          try {
+            const error = JSON.parse(xhr.responseText);
+            errMsg = error.message || error.detail?.message || (typeof error.detail === 'string' ? error.detail : 'Upload failed');
+          } catch (_) {}
           setFiles(prev => prev.map(f => 
-            f.id === uploadFile.id ? { ...f, status: 'error', error: error.detail?.message || 'Upload failed' } : f
+            f.id === uploadFile.id ? { ...f, status: 'error', error: errMsg } : f
           ));
         }
       });
