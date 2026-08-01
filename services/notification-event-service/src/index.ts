@@ -1,0 +1,38 @@
+import { Logger } from "@ire/shared-logger";
+import { CloudEvent } from "@ire/shared-events";
+
+const logger = new Logger({ serviceName: "notification-event-service" });
+
+export class WebhookDispatcher {
+  public async dispatch(webhookUrl: string, event: CloudEvent): Promise<void> {
+    logger.info("Dispatching Webhook event to tenant subscriber", {
+      tenantId: event.tenantid,
+      webhookUrl,
+      eventType: event.type
+    });
+  }
+}
+
+async function bootstrap() {
+  logger.info("Initializing Notification & Event Dispatcher Service...");
+  const dispatcher = new WebhookDispatcher();
+
+  await dispatcher.dispatch("https://api.acme-health.com/webhooks/ire", {
+    specversion: "1.0",
+    id: "evt_100",
+    source: "ire/claim-lifecycle",
+    type: "com.ire.claim.adjudicated.v1",
+    subject: "claim_9001",
+    time: new Date().toISOString(),
+    datacontenttype: "application/json",
+    tenantid: "tenant_acme_health",
+    correlationid: "corr_100",
+    data: { status: "ADJUDICATED", recommendation: "APPROVE" }
+  });
+
+  logger.info("Notification Event Service listening on port 3007.");
+}
+
+bootstrap().catch(err => {
+  logger.error("Failed to start notification-event-service", { error: err.message });
+});

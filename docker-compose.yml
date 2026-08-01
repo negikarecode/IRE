@@ -1,0 +1,136 @@
+version: '3.8'
+
+services:
+  # Infrastructure Datastores & Event Broker
+  postgres:
+    image: postgres:16-alpine
+    container_name: ire-postgres
+    environment:
+      POSTGRES_USER: ire_admin
+      POSTGRES_PASSWORD: ire_password_secure
+      POSTGRES_DB: ire_tenant_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./infrastructure/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ire_admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: ire-redis
+    ports:
+      - "6379:6379"
+
+  vector-store:
+    image: qdrant/qdrant:v1.7.4
+    container_name: ire-vector-store
+    ports:
+      - "6333:6333"
+
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v23.3.5
+    container_name: ire-event-broker
+    command:
+      - redpanda start
+      - --smp 1
+      - --memory 1G
+      - --reserve-memory 0M
+      - --overprovisioned
+      - --node-id 0
+      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+    ports:
+      - "9092:9092"
+
+  # API Gateway Component
+  api-gateway:
+    build:
+      context: .
+      dockerfile: gateway/api-gateway/Dockerfile
+    container_name: ire-api-gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - tenant-identity-service
+      - claim-lifecycle-service
+
+  # Microservices
+  tenant-identity-service:
+    build:
+      context: .
+      dockerfile: services/tenant-identity-service/Dockerfile
+    container_name: ire-tenant-identity-service
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ingestion-service:
+    build:
+      context: .
+      dockerfile: services/ingestion-service/Dockerfile
+    container_name: ire-ingestion-service
+    ports:
+      - "3002:3002"
+    depends_on:
+      - redpanda
+
+  claim-lifecycle-service:
+    build:
+      context: .
+      dockerfile: services/claim-lifecycle-service/Dockerfile
+    container_name: ire-claim-lifecycle-service
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  reasoning-engine-service:
+    build:
+      context: .
+      dockerfile: services/reasoning-engine-service/Dockerfile
+    container_name: ire-reasoning-engine-service
+    ports:
+      - "3004:3004"
+
+  ai-agent-service:
+    build:
+      context: .
+      dockerfile: services/ai-agent-service/Dockerfile
+    container_name: ire-ai-agent-service
+    ports:
+      - "3005:3005"
+    depends_on:
+      - vector-store
+
+  audit-ledger-service:
+    build:
+      context: .
+      dockerfile: services/audit-ledger-service/Dockerfile
+    container_name: ire-audit-ledger-service
+    ports:
+      - "3006:3006"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  notification-event-service:
+    build:
+      context: .
+      dockerfile: services/notification-event-service/Dockerfile
+    container_name: ire-notification-event-service
+    ports:
+      - "3007:3007"
+    depends_on:
+      - redis
+      - redpanda
+
+volumes:
+  postgres_data:

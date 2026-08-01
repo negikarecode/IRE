@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apollo Multispecialty Hospital — Hospital Workspace</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/auth_router.js"></script>
+    <style>
+        /* Modern Stripe / Linear / Vercel Aesthetic Overrides */
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+            background: #090d16;
+            color: #f1f5f9;
+        }
+
+        .sidebar {
+            width: 240px;
+            background: #0d1322;
+            border-right: 1px solid rgba(255, 255, 255, 0.07);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-nav {
+            padding: 20px 12px;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 16px;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 8px;
+            text-decoration: none;
+            margin-bottom: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(0, 242, 254, 0.08);
+            color: #ffffff;
+        }
+
+        .nav-item.active {
+            border-left: 3px solid var(--accent-cyan);
+        }
+
+        /* HERO UPLOAD SECTION */
+        .hero-upload-container {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.8), rgba(13, 19, 34, 0.95));
+            border: 2px dashed rgba(0, 242, 254, 0.35);
+            border-radius: 16px;
+            padding: 56px 40px;
+            text-align: center;
+            margin-bottom: 36px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .hero-upload-container:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 242, 254, 0.03);
+            box-shadow: 0 16px 50px rgba(0, 242, 254, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .hero-upload-icon-box {
+            width: 64px;
+            height: 64px;
+            background: rgba(0, 242, 254, 0.08);
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .hero-upload-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: -0.02em;
+            margin-bottom: 12px;
+        }
+
+        .hero-upload-explanation {
+            font-size: 1.02rem;
+            color: #94a3b8;
+            max-width: 680px;
+            margin: 0 auto 28px;
+            line-height: 1.6;
+        }
+
+        .hero-upload-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .supported-formats-tag {
+            font-size: 0.82rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        /* LARGE DROPBOX UPLOAD CARD */
+        .dropbox-upload-card {
+            background: #0d1322;
+            border: 2px dashed rgba(0, 242, 254, 0.4);
+            border-radius: 20px;
+            padding: 72px 48px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        .dropbox-upload-card:hover, .dropbox-upload-card.dragover {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 242, 254, 0.04);
+            box-shadow: 0 20px 60px rgba(0, 242, 254, 0.18);
+        }
+
+        /* VERTICAL TIMELINE FOR LIVE PROCESSING */
+        .upload-timeline-container {
+            max-width: 640px;
+            margin: 36px auto 0;
+            background: #090d16;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 32px 36px;
+            text-align: left;
+            display: none;
+        }
+
+        .timeline-step {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            opacity: 0.35;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-step:last-child {
+            border-bottom: none;
+        }
+
+        .timeline-step.active, .timeline-step.completed {
+            opacity: 1;
+        }
+
+        .step-status-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.06);
+            color: #64748b;
+        }
+
+        .timeline-step.active .step-status-icon {
+            background: rgba(0, 242, 254, 0.15);
+            color: var(--accent-cyan);
+            border: 1px solid var(--accent-cyan);
+            animation: pulse-ring 1.5s infinite;
+        }
+
+        .timeline-step.completed .step-status-icon {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid #10b981;
+        }
+
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 242, 254, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 242, 254, 0); }
+        }
+
+        .step-label {
+            font-size: 0.98rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        /* 3 KPI CARDS GRID */
+        .kpi-three-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 36px;
+        }
+
+        .kpi-card-simple {
+            background: #0d1322;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 14px;
+            padding: 24px;
+            transition: border-color 0.2s ease;
+        }
+
+        .kpi-card-simple:hover {
+            border-color: rgba(0, 242, 254, 0.3);
+        }
+
+        .kpi-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+        }
+
+        .kpi-value-lg {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value-lg.warning { color: #f59e0b; }
+        .kpi-value-lg.success { color: #10b981; }
+        .kpi-value-lg.danger { color: #ef4444; }
+
+        .kpi-sub-text {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        /* CLAIMS QUEUE FILTER CHIPS */
+        .filter-chips-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .filter-chip {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 7px 18px;
+            color: #94a3b8;
+            font-size: 0.84rem;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+        }
+
+        .filter-chip:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        .filter-chip.active {
+            background: var(--accent-cyan);
+            color: #090d16;
+            font-weight: 700;
+            border-color: var(--accent-cyan);
+        }
+
+        .card-table-clean {
+            background: #0d1322;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .table-clean-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 28px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .table-clean-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        /* LIGHTWEIGHT APPEALS CARD STYLING */
+        .appeal-card-clean {
+            background: #0d1322;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 24px 28px;
+            transition: border-color 0.2s ease;
+        }
+
+        .appeal-card-clean:hover {
+            border-color: rgba(0, 242, 254, 0.3);
+        }
+
+        .appeal-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .appeal-claim-id {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .appeal-company {
+            font-size: 0.88rem;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        .appeal-card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 20px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .appeal-meta-group {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .appeal-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .meta-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .meta-val {
+            font-size: 0.92rem;
+            color: #f1f5f9;
+        }
+
+        .meta-val.danger { color: #ef4444; font-weight: 600; }
+        .meta-val.warning { color: #f59e0b; }
+
+        .appeal-card-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* MODERN SAAS SETTINGS STYLING */
+        .settings-section-card {
+            background: #0d1322;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 24px 28px;
+        }
+
+        .settings-card-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .settings-card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(0, 242, 254, 0.1);
+            color: #00f2fe;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .settings-section-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        .settings-section-desc {
+            font-size: 0.84rem;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        .settings-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .settings-table th {
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: left;
+        }
+
+        .settings-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.88rem;
+        }
+
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
+        .form-input {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #ffffff;
+            font-size: 0.88rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-input:focus {
+            border-color: #00f2fe;
+        }
+
+        .settings-advanced-details {
+            background: #0d1322;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 20px 28px;
+        }
+
+        .settings-advanced-summary {
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+        }
+
+        .settings-advanced-summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .settings-advanced-details[open] .chevron-icon {
+            transform: rotate(180deg);
+        }
+
+        .chevron-icon {
+            transition: transform 0.2s ease;
+        }
+
+        /* GITHUB PR MEETS MEDICAL CODING REVIEW STYLING */
+        .pr-header-card {
+            background: #0d1322;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 24px 28px;
+            margin-bottom: 24px;
+        }
+
+        .pr-header-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 20px;
+            padding-top: 18px;
+            margin-top: 18px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .pr-meta-box {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .pr-tabs-nav {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 24px;
+        }
+
+        .pr-tab-btn {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 12px 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.15s ease;
+        }
+
+        .pr-tab-btn:hover {
+            color: #ffffff;
+        }
+
+        .pr-tab-btn.active {
+            color: #00f2fe;
+            border-bottom-color: #00f2fe;
+        }
+
+        .issue-card {
+            background: #0d1322;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 22px 26px;
+            margin-bottom: 20px;
+            transition: border-color 0.2s ease;
+        }
+
+        .issue-card.high-severity {
+            border-left: 4px solid #ef4444;
+        }
+
+        .issue-card.medium-severity {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .evidence-quote {
+            background: rgba(15, 23, 42, 0.7);
+            border-left: 3px solid #00f2fe;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+            margin: 10px 0;
+            font-style: italic;
+        }
+
+        .suggested-fix-card {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 0.88rem;
+            color: #a7f3d0;
+            margin-top: 12px;
+        }
+
+        .ocr-highlight-sentence {
+            background: rgba(239, 68, 68, 0.2);
+            border-bottom: 2px solid #ef4444;
+            padding: 2px 4px;
+            border-radius: 4px;
+            color: #ffffff;
+            transition: all 0.3s ease;
+        }
+
+        .ocr-highlight-sentence.pulse-active {
+            background: rgba(0, 242, 254, 0.35);
+            border-bottom-color: #00f2fe;
+            box-shadow: 0 0 12px rgba(0, 242, 254, 0.4);
+        }
+
+        @media (max-width: 900px) {
+            .kpi-three-grid {
+                grid-template-columns: 1fr;
+            }
+            .appeal-meta-group {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+            .form-grid-2, .form-grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <div class="app-layout">
+        <!-- Minimal Streamlined Sidebar (EXACTLY 5 NAV ITEMS) -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon hospital-logo">
+                    <span style="font-weight: 800; font-size: 1rem; color: #fff;">AH</span>
+                </div>
+                <div class="logo-text">
+                    <span class="brand-name">Apollo Hospital</span>
+                    <span class="brand-sub">ROHINI: ROH-89021489</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="nav-item active" data-tab="dashboard">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#upload-claim" class="nav-item" data-tab="upload-claim">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <span>Upload Claim</span>
+                </a>
+                <a href="#claims" class="nav-item" data-tab="claims">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    <span>Claims Queue</span>
+                </a>
+                <a href="#appeals" class="nav-item" data-tab="appeals">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                    <span>Appeals</span>
+                    <span class="nav-badge-action" style="margin-left: auto; background: rgba(239, 68, 68, 0.18); color: #ef4444; font-size: 0.72rem; font-weight: 700; padding: 2px 7px; border-radius: 6px;">3</span>
+                </a>
+                <a href="#settings" class="nav-item" data-tab="settings">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header Bar -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h1 class="page-title" id="page-title">Dashboard</h1>
+                    <span class="tenant-tag">Facility: Apollo Multispecialty Hospital</span>
+                </div>
+                <div class="header-right">
+                    <button class="cmd-trigger-btn" onclick="openCmdPalette()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <span>Search Claims, Patients...</span>
+                        <span class="kbd-badge">Ctrl K</span>
+                    </button>
+                    <div class="user-profile">
+                        <div class="avatar hospital-avatar">RK</div>
+                        <div class="user-info">
+                            <span class="user-name">Rajesh Kumar</span>
+                            <span class="user-role">Billing Head</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-ghost btn-sm" onclick="logoutUser()">Sign Out</button>
+                </div>
+            </header>
+
+            <!-- Dynamic Views Container -->
+            <div class="content-body" style="padding: 32px 40px;">
+                
+                <!-- 1. DASHBOARD LANDING PAGE -->
+                <div id="view-dashboard" class="dashboard-view active">
+                    
+                    <!-- HERO UPLOAD SECTION -->
+                    <div class="hero-upload-container" onclick="triggerFileUpload()">
+                        <div class="hero-upload-icon-box">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        </div>
+                        <h2 class="hero-upload-title">Drag & drop claim documents here to start instant review</h2>
+                        <p class="hero-upload-explanation">
+                            Upload discharge summaries, operative notes, itemized bills and supporting documents. AI will automatically review coding, documentation and insurance compliance.
+                        </p>
+                        <div class="hero-upload-actions">
+                            <button class="btn btn-primary" style="padding: 12px 32px; font-size: 1rem; font-weight: 600;" onclick="event.stopPropagation(); triggerFileUpload();">Browse Files</button>
+                            <span class="supported-formats-tag">Supported formats: PDF, JPG, PNG, DICOM (up to 50MB)</span>
+                        </div>
+                    </div>
+                    <input type="file" id="dashboard-file-input" style="display: none;" onchange="handleDashboardUpload(this.files)">
+
+                    <!-- 3 KPI CARDS -->
+                    <div class="kpi-three-grid">
+                        <div class="kpi-card-simple" onclick="openTab('claims')" style="cursor: pointer;">
+                            <div class="kpi-label">Claims Waiting Review</div>
+                            <div class="kpi-value-lg warning">24</div>
+                            <div class="kpi-sub-text">₹42,00,000.00 pending review</div>
+                        </div>
+                        <div class="kpi-card-simple" onclick="openTab('claims')" style="cursor: pointer;">
+                            <div class="kpi-label">Claims Ready to Submit</div>
+                            <div class="kpi-value-lg success">86</div>
+                            <div class="kpi-sub-text">₹1.42 Crore ready for portal batch</div>
+                        </div>
+                        <div class="kpi-card-simple" onclick="openTab('claims')" style="cursor: pointer;">
+                            <div class="kpi-label">Revenue At Risk</div>
+                            <div class="kpi-value-lg danger">₹18,50,000.00</div>
+                            <div class="kpi-sub-text">Coding & pre-auth gaps</div>
+                        </div>
+                    </div>
+
+                    <!-- CLAIMS REQUIRING ACTION TABLE -->
+                    <div class="card-table-clean">
+                        <div class="table-clean-header">
+                            <h3 class="table-clean-title">Claims Requiring Action</h3>
+                            <a href="#claims" class="btn btn-ghost btn-sm">View All in Claims Queue →</a>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Claim ID</th>
+                                    <th>Patient</th>
+                                    <th>Insurance</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="font-mono" style="color: var(--accent-cyan); font-weight: 600;">#CLM-2026-90124</td>
+                                    <td style="font-weight: 500; color: #fff;">Sunita Verma</td>
+                                    <td>Star Health Insurance</td>
+                                    <td><span class="badge badge-warning">Needs Review</span></td>
+                                    <td><span class="badge badge-danger">HIGH</span></td>
+                                    <td><button class="btn btn-sm btn-primary" onclick="openMergedClaimReview('CLM-2026-90124')">Open Review →</button></td>
+                                </tr>
+                                <tr>
+                                    <td class="font-mono" style="color: var(--accent-cyan); font-weight: 600;">#CLM-90128</td>
+                                    <td style="font-weight: 500; color: #fff;">Amitabh Sharma</td>
+                                    <td>HDFC ERGO Health</td>
+                                    <td><span class="badge badge-warning">Missing Pre-Auth</span></td>
+                                    <td><span class="badge badge-warning">MEDIUM</span></td>
+                                    <td><button class="btn btn-sm btn-primary" onclick="openMergedClaimReview('CLM-90128')">Open Review →</button></td>
+                                </tr>
+                                <tr>
+                                    <td class="font-mono" style="color: var(--accent-cyan); font-weight: 600;">#CLM-88192</td>
+                                    <td style="font-weight: 500; color: #fff;">Rajesh Patel</td>
+                                    <td>ICICI Lombard General</td>
+                                    <td><span class="badge badge-danger">Rejection Risk</span></td>
+                                    <td><span class="badge badge-danger">HIGH</span></td>
+                                    <td><button class="btn btn-sm btn-primary" onclick="openMergedClaimReview('CLM-88192')">Open Review →</button></td>
+                                </tr>
+                                <tr>
+                                    <td class="font-mono" style="color: var(--accent-cyan); font-weight: 600;">#CLM-77104</td>
+                                    <td style="font-weight: 500; color: #fff;">Priya Sundaram</td>
+                                    <td>Max Bupa (Niva Bupa)</td>
+                                    <td><span class="badge badge-warning">Modifier Missing</span></td>
+                                    <td><span class="badge badge-warning">MEDIUM</span></td>
+                                    <td><button class="btn btn-sm btn-primary" onclick="openMergedClaimReview('CLM-77104')">Open Review →</button></td>
+                                </tr>
+                                <tr>
+                                    <td class="font-mono" style="color: var(--accent-cyan); font-weight: 600;">#CLM-66019</td>
+                                    <td style="font-weight: 500; color: #fff;">Vikram Malhotra</td>
+                                    <td>Ayushman Bharat (PM-JAY)</td>
+                                    <td><span class="badge badge-info">Documentation Gap</span></td>
+                                    <td><span class="badge badge-info">LOW</span></td>
+                                    <td><button class="btn btn-sm btn-primary" onclick="openMergedClaimReview('CLM-66019')">Open Review →</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+                <!-- 2. UPLOAD CLAIM PAGE -->
+                <div id="view-upload-claim" class="dashboard-view">
+                    <div class="dropbox-upload-card" id="dropbox-card" onclick="triggerDedicatedUpload()">
+                        <div class="hero-upload-icon-box" style="width: 80px; height: 80px; margin-bottom: 24px;">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        </div>
+                        <h2 style="font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 12px;">Drag & Drop Clinical PDFs Here</h2>
+                        <p style="font-size: 1.05rem; color: #94a3b8; max-width: 580px; margin: 0 auto 32px; line-height: 1.6;">
+                            Drop multiple discharge summaries, operative notes, or itemized bills to begin automated OCR extraction and AI claim review.
+                        </p>
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+                            <button class="btn btn-primary" style="padding: 14px 40px; font-size: 1.05rem; font-weight: 600;" onclick="event.stopPropagation(); triggerDedicatedUpload();">Browse Files</button>
+                            <span class="supported-formats-tag" style="font-size: 0.88rem;">Supports multiple PDF documents (up to 50MB per file)</span>
+                        </div>
+                        <input type="file" id="dedicated-file-input" multiple accept=".pdf,.png,.jpg,.jpeg" style="display: none;" onchange="handleDedicatedUpload(this.files)">
+                    </div>
+
+                    <div class="upload-timeline-container" id="upload-timeline-box">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                            <div>
+                                <h3 style="font-size: 1.1rem; font-weight: 700; color: #fff;" id="file-processing-title">Processing Claim Document...</h3>
+                                <span class="text-sub" style="font-size: 0.82rem;" id="file-processing-sub">Automated Medical OCR & Scrubber Pipeline</span>
+                            </div>
+                            <span class="badge badge-accent font-mono" id="processing-progress-percent">0%</span>
+                        </div>
+
+                        <div class="timeline-step" id="step-ocr">
+                            <div class="step-status-icon" id="icon-ocr">1</div>
+                            <span class="step-label">OCR Started</span>
+                        </div>
+                        <div class="timeline-step" id="step-extract">
+                            <div class="step-status-icon" id="icon-extract">2</div>
+                            <span class="step-label">Extracting Clinical Data</span>
+                        </div>
+                        <div class="timeline-step" id="step-rules">
+                            <div class="step-status-icon" id="icon-rules">3</div>
+                            <span class="step-label">Running Insurance Rules</span>
+                        </div>
+                        <div class="timeline-step" id="step-ai">
+                            <div class="step-status-icon" id="icon-ai">4</div>
+                            <span class="step-label">AI Reviewing Claim</span>
+                        </div>
+                        <div class="timeline-step" id="step-completed">
+                            <div class="step-status-icon" id="icon-completed">5</div>
+                            <span class="step-label">Completed</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. CLAIMS QUEUE PAGE -->
+                <div id="view-claims" class="dashboard-view">
+                    <div class="filter-chips-bar">
+                        <button class="filter-chip active" onclick="filterClaimsQueue('ALL', this)">All (84)</button>
+                        <button class="filter-chip" onclick="filterClaimsQueue('NEEDS_REVIEW', this)">Needs Review (24)</button>
+                        <button class="filter-chip" onclick="filterClaimsQueue('MISSING_DOCS', this)">Missing Documents (12)</button>
+                        <button class="filter-chip" onclick="filterClaimsQueue('READY', this)">Ready (86)</button>
+                        <button class="filter-chip" onclick="filterClaimsQueue('SUBMITTED', this)">Submitted (142)</button>
+                        <button class="filter-chip" onclick="filterClaimsQueue('DENIED', this)">Denied (18)</button>
+                    </div>
+
+                    <div class="card-table-clean">
+                        <table class="data-table" id="claims-queue-table">
+                            <thead>
+                                <tr>
+                                    <th>Claim ID</th>
+                                    <th>Patient</th>
+                                    <th>Insurance</th>
+                                    <th>Current Stage</th>
+                                    <th>Risk Level</th>
+                                    <th>Estimated Revenue</th>
+                                    <th>Last Updated</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="claims-queue-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 4. SIMPLIFIED LIGHTWEIGHT APPEALS PAGE (ONLY DENIED CLAIMS) -->
+                <div id="view-appeals" class="dashboard-view">
+                    <div style="max-width: 840px; margin: 0 auto;">
+                        
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+                            <div>
+                                <h2 style="font-size: 1.3rem; font-weight: 800; color: #fff;">Denied Claims Appeals</h2>
+                                <p style="font-size: 0.9rem; color: #94a3b8; margin-top: 4px;">Lightweight reconsideration manager listing only denied claims needing appeals.</p>
+                            </div>
+                            <span class="badge badge-danger font-mono">3 Denied Claims</span>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 20px;">
+                            
+                            <!-- APPEAL CARD 1 -->
+                            <div class="appeal-card-clean">
+                                <div class="appeal-card-header">
+                                    <div>
+                                        <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Claim</div>
+                                        <div class="appeal-claim-id">#CLM-88192 — Rajesh Patel</div>
+                                        <div style="margin-top: 6px;">
+                                            <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 6px;">Insurance Company:</span>
+                                            <span class="appeal-company" style="display: inline-block;">ICICI Lombard General Insurance</span>
+                                        </div>
+                                    </div>
+                                    <span class="badge badge-success">AI Appeal Draft Ready</span>
+                                </div>
+
+                                <div class="appeal-card-body">
+                                    <div class="appeal-meta-item">
+                                        <div class="meta-label">Denial Reason</div>
+                                        <div class="meta-val danger">Cashless Rejection: CO-50 Non-covered procedure / Lack of medical necessity</div>
+                                    </div>
+                                    <div class="appeal-meta-group">
+                                        <div class="appeal-meta-item">
+                                            <div class="meta-label">Amount at Risk</div>
+                                            <div class="meta-val font-mono" style="color: #fff; font-weight: 700;">₹1,85,000.00</div>
+                                        </div>
+                                        <div class="appeal-meta-item">
+                                            <div class="meta-label">Appeal Deadline</div>
+                                            <div class="meta-val warning" style="font-weight: 600;">Tomorrow (Aug 2, 2026)</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="appeal-card-actions">
+                                    <button class="btn btn-ghost btn-sm" onclick="reviewAppealDraft('APP-2026-04')">Review Appeal</button>
+                                    <button class="btn btn-primary btn-sm" onclick="submitAppealCase('APP-2026-04')">Submit Appeal</button>
+                                </div>
+                            </div>
+
+                            <!-- APPEAL CARD 2 -->
+                            <div class="appeal-card-clean">
+                                <div class="appeal-card-header">
+                                    <div>
+                                        <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Claim</div>
+                                        <div class="appeal-claim-id">#CLM-77019 — Sunita Verma</div>
+                                        <div style="margin-top: 6px;">
+                                            <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 6px;">Insurance Company:</span>
+                                            <span class="appeal-company" style="display: inline-block;">Star Health Insurance</span>
+                                        </div>
+                                    </div>
+                                    <span class="badge badge-success">AI Appeal Draft Ready</span>
+                                </div>
+
+                                <div class="appeal-card-body">
+                                    <div class="appeal-meta-item">
+                                        <div class="meta-label">Denial Reason</div>
+                                        <div class="meta-val danger">Missing Pre-Authorization Code on DOS</div>
+                                    </div>
+                                    <div class="appeal-meta-group">
+                                        <div class="appeal-meta-item">
+                                            <div class="meta-label">Amount at Risk</div>
+                                            <div class="meta-val font-mono" style="color: #fff; font-weight: 700;">₹18,500.00</div>
+                                        </div>
+                                        <div class="appeal-meta-item">
+                                            <div class="meta-label">Appeal Deadline</div>
+                                            <div class="meta-val" style="color: #94a3b8; font-weight: 500;">Aug 5, 2026 (4 days left)</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="appeal-card-actions">
+                                    <button class="btn btn-ghost btn-sm" onclick="reviewAppealDraft('APP-2026-02')">Review Appeal</button>
+                                    <button class="btn btn-primary btn-sm" onclick="submitAppealCase('APP-2026-02')">Submit Appeal</button>
+                                </div>
+                            </div>
+
+                            <!-- APPEAL CARD 3 -->
+                            <div class="appeal-card-clean">
+                                <div class="appeal-card-header">
+                                    <div>
+                                        <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Claim</div>
+                                        <div class="appeal-claim-id">#CLM-66014 — Vikram Malhotra</div>
+                                        <div style="margin-top: 6px;">
+                                            <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 6px;">Insurance Company:</span>
+                                            <span class="appeal-company" style="display: inline-block;">HDFC ERGO Health</span>
+                                        </div>
+                                    </div>
+                                    <span class="badge badge-success">AI Appeal Draft Ready</span>
+                                </div>
+
+                                <div class="appeal-card-body">
+                                    <div class="appeal-meta-item">
+                                        <div class="meta-label">Denial Reason</div>
+                                        <div class="meta-val danger">Unbundling / Separate Billing of Intraoperative Supplies</div>
+                                    </div>
+                                    <div class="appeal-meta-group">
+                                        <div class="appeal-meta-item">
+                                            <div class="meta-label">Amount at Risk</div>
+                                            <div class="meta-val font-mono" style="color: #fff; font-weight: 700;">₹42,000.00</div>
+                                        </div>
+                                        <div class="appeal-meta-item">
+                                            <div class="meta-label">Appeal Deadline</div>
+                                            <div class="meta-val" style="color: #94a3b8; font-weight: 500;">Aug 8, 2026 (7 days left)</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="appeal-card-actions">
+                                    <button class="btn btn-ghost btn-sm" onclick="reviewAppealDraft('APP-2026-01')">Review Appeal</button>
+                                    <button class="btn btn-primary btn-sm" onclick="submitAppealCase('APP-2026-01')">Submit Appeal</button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CORE FEATURE: CLAIM REVIEW WORKFLOW (GITHUB PR MEETS MEDICAL CODING REVIEW) -->
+                <div id="view-claim-review" class="dashboard-view">
+                    <div style="max-width: 1080px; margin: 0 auto; padding-bottom: 90px;">
+                        
+                        <!-- HEADER CARD -->
+                        <div class="pr-header-card">
+                            <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span class="badge badge-warning" id="pr-status-badge">NEEDS REVIEW</span>
+                                        <span style="font-size: 0.85rem; color: #64748b; font-family: monospace;">Ingested 10 mins ago</span>
+                                    </div>
+                                    <h2 style="font-size: 1.4rem; font-weight: 800; color: #ffffff; margin-top: 6px;">
+                                        Claim Review — #CLM-2026-90124
+                                    </h2>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Overall AI Risk Score</div>
+                                    <div style="font-size: 1.25rem; font-weight: 800; color: #ef4444; font-family: monospace; margin-top: 2px;" id="pr-risk-score">94.8% HIGH RISK</div>
+                                </div>
+                            </div>
+
+                            <div class="pr-header-grid">
+                                <div class="pr-meta-box">
+                                    <span class="meta-label">Claim ID</span>
+                                    <span class="meta-val font-mono" style="color: #00f2fe; font-weight: 700;">#CLM-2026-90124</span>
+                                </div>
+                                <div class="pr-meta-box">
+                                    <span class="meta-label">Patient</span>
+                                    <span class="meta-val" style="font-weight: 600;">Sunita Verma (UHID-90214)</span>
+                                </div>
+                                <div class="pr-meta-box">
+                                    <span class="meta-label">Insurance Company</span>
+                                    <span class="meta-val">Star Health Insurance</span>
+                                </div>
+                                <div class="pr-meta-box">
+                                    <span class="meta-label">Estimated Claim Value</span>
+                                    <span class="meta-val font-mono" style="color: #fff; font-weight: 700;">₹1,29,000.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- THREE TABS: SUMMARY, CODING ISSUES, DOCUMENTS -->
+                        <div class="pr-tabs-nav">
+                            <button class="pr-tab-btn active" id="tab-btn-summary" onclick="switchReviewSubTab('summary')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                                <span>Summary</span>
+                            </button>
+                            <button class="pr-tab-btn" id="tab-btn-issues" onclick="switchReviewSubTab('issues')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                <span>Coding Issues</span>
+                                <span class="badge badge-danger font-mono" id="issues-count-pill" style="font-size: 0.7rem; padding: 2px 6px;">2</span>
+                            </button>
+                            <button class="pr-tab-btn" id="tab-btn-documents" onclick="switchReviewSubTab('documents')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                                <span>Documents</span>
+                                <span class="badge font-mono" style="font-size: 0.7rem; background: rgba(255,255,255,0.08); color: #94a3b8; padding: 2px 6px;">1</span>
+                            </button>
+                        </div>
+
+                        <!-- TAB 1: SUMMARY -->
+                        <div id="subtab-summary" class="review-subtab-content" style="display: block;">
+                            <div style="display: flex; flex-direction: column; gap: 20px;">
+                                <!-- OVERALL AI DECISION -->
+                                <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between;">
+                                    <div style="display: flex; align-items: center; gap: 16px;">
+                                        <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; display: flex; align-items: center; justify-content: center;">
+                                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="17"></line></svg>
+                                        </div>
+                                        <div>
+                                            <div style="font-size: 0.78rem; font-weight: 700; color: #f59e0b; text-transform: uppercase;">Overall AI Decision</div>
+                                            <div style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin-top: 2px;" id="summary-decision-title">
+                                                Needs Review — 2 Coding Compliance Issues Found
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span class="badge badge-warning" id="summary-decision-badge">Action Required</span>
+                                </div>
+
+                                <!-- AI SUMMARY -->
+                                <div class="settings-section-card">
+                                    <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 12px;">AI Clinical & Scrubber Summary</h3>
+                                    <p style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.6;">
+                                        The autonomous claim scrubber evaluated encounter <strong style="color: #fff;">#CLM-2026-90124</strong> against Star Health clinical billing rules. Two coding discrepancies were detected that present high rejection probability if submitted uncorrected.
+                                    </p>
+                                    <ul style="margin-top: 14px; padding-left: 20px; color: #94a3b8; font-size: 0.88rem; line-height: 1.7;">
+                                        <li><strong style="color: #ef4444;">Issue 1 (High Severity):</strong> OPD consultation CPT 99214 missing Modifier -25 when performed on same DOS as surgical CPT 47562.</li>
+                                        <li><strong style="color: #f59e0b;">Issue 2 (Medium Severity):</strong> Unbundled billing of intraoperative surgical mesh CPT 49568.</li>
+                                    </ul>
+                                </div>
+
+                                <!-- POTENTIAL REVENUE SAVED -->
+                                <div class="settings-section-card" style="background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(0,242,254,0.04)); border-color: rgba(16,185,129,0.25);">
+                                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                                        <div>
+                                            <div style="font-size: 0.78rem; font-weight: 700; color: #10b981; text-transform: uppercase;">Potential Revenue Saved / Recoverable</div>
+                                            <div style="font-size: 1.8rem; font-weight: 800; color: #ffffff; font-family: monospace; margin-top: 4px;" id="summary-revenue-saved">
+                                                ₹22,500.00
+                                            </div>
+                                            <div style="font-size: 0.84rem; color: #94a3b8; margin-top: 4px;">
+                                                By resolving CPT bundling and appending Modifier -25 prior to TPA submission.
+                                            </div>
+                                        </div>
+                                        <div style="width: 52px; height: 52px; border-radius: 12px; background: rgba(16,185,129,0.15); color: #10b981; display: flex; align-items: center; justify-content: center;">
+                                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: CODING ISSUES -->
+                        <div id="subtab-issues" class="review-subtab-content" style="display: none;">
+                            <div style="display: flex; flex-direction: column; gap: 16px;">
+                                
+                                <!-- ISSUE CARD 1 -->
+                                <div class="issue-card high-severity" id="card-issue-1">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <span class="badge badge-danger">HIGH SEVERITY</span>
+                                            <span style="font-weight: 700; color: #fff; font-size: 0.95rem;">Missing Modifier -25 on OPD Consultation CPT 99214</span>
+                                        </div>
+                                        <span class="badge font-mono" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">₹4,500.00 At Risk</span>
+                                    </div>
+
+                                    <div style="font-size: 0.88rem; color: #94a3b8; line-height: 1.6;">
+                                        <strong>Explanation:</strong> TPA billing rules mandate Modifier -25 when an OPD consultation is billed on the same Date of Service (DOS) as emergency surgical procedure CPT 47562. Missing modifier causes automated rejection.
+                                    </div>
+
+                                    <div class="evidence-quote">
+                                        <strong>Supporting Evidence (Discharge OCR):</strong><br />
+                                        "Outpatient Evaluation: Pre-op OPD consultation (CPT 99214) performed 3 hours prior to emergency laparoscopic surgery on 2026-07-28."
+                                    </div>
+
+                                    <div class="suggested-fix-card">
+                                        <strong>Suggested Fix:</strong> Append <strong>Modifier -25</strong> to CPT 99214 line item.
+                                    </div>
+
+                                    <div style="display: flex; items: center; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+                                        <button class="btn btn-ghost btn-sm" onclick="rejectFix('issue-1')">Reject</button>
+                                        <button class="btn btn-primary btn-sm" id="btn-accept-1" onclick="acceptFix('issue-1')">Accept Fix (Append Mod -25)</button>
+                                    </div>
+                                </div>
+
+                                <!-- ISSUE CARD 2 -->
+                                <div class="issue-card medium-severity" id="card-issue-2">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <span class="badge badge-warning">MEDIUM SEVERITY</span>
+                                            <span style="font-weight: 700; color: #fff; font-size: 0.95rem;">Unbundled Intraoperative Mesh Billing (CPT 49568)</span>
+                                        </div>
+                                        <span class="badge font-mono" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">₹18,000.00 At Risk</span>
+                                    </div>
+
+                                    <div style="font-size: 0.88rem; color: #94a3b8; line-height: 1.6;">
+                                        <strong>Explanation:</strong> Surgical mesh insertion CPT 49568 was billed as a separate line item. Star Health policies bundle mesh insertion into primary laparoscopic repair CPT 47562 unless separate modifier -59 is documented.
+                                    </div>
+
+                                    <div class="evidence-quote">
+                                        <strong>Supporting Evidence (Discharge OCR):</strong><br />
+                                        "Intraoperative Placement of Synthetic Surgical Mesh (CPT 49568) charged separately at ₹18,000.00."
+                                    </div>
+
+                                    <div class="suggested-fix-card">
+                                        <strong>Suggested Fix:</strong> Bundle Mesh CPT 49568 into Primary Surgical Package or attach Modifier -59 with clinical justification.
+                                    </div>
+
+                                    <div style="display: flex; items: center; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+                                        <button class="btn btn-ghost btn-sm" onclick="rejectFix('issue-2')">Reject</button>
+                                        <button class="btn btn-primary btn-sm" id="btn-accept-2" onclick="acceptFix('issue-2')">Accept Fix (Bundle Package)</button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- TAB 3: DOCUMENTS (INTERACTIVE OCR SPLIT VIEW) -->
+                        <div id="subtab-documents" class="review-subtab-content" style="display: none;">
+                            <div style="display: grid; grid-template-columns: 280px 1fr; gap: 20px; align-items: start;">
+                                
+                                <!-- UPLOADED PDF LIST -->
+                                <div class="settings-section-card" style="padding: 18px;">
+                                    <div style="font-weight: 700; font-size: 0.88rem; color: #fff; margin-bottom: 12px;">Uploaded PDF Documents</div>
+                                    <div style="background: rgba(0,242,254,0.06); border: 1px solid rgba(0,242,254,0.2); padding: 12px; border-radius: 8px; cursor: pointer;">
+                                        <div style="font-weight: 600; color: #00f2fe; font-size: 0.82rem; word-break: break-all;">Discharge_Summary_Operative_Report_0728.pdf</div>
+                                        <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">1.4 MB • 100% OCR Confidence</div>
+                                    </div>
+
+                                    <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06);">
+                                        <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 8px;">Click Finding to Highlight Text</div>
+                                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                                            <button class="btn btn-ghost btn-sm" style="text-align: left; font-size: 0.78rem; justify-content: flex-start;" onclick="highlightOCRText('finding-1')">
+                                                🎯 Finding #1 (CPT 99214)
+                                            </button>
+                                            <button class="btn btn-ghost btn-sm" style="text-align: left; font-size: 0.78rem; justify-content: flex-start;" onclick="highlightOCRText('finding-2')">
+                                                🎯 Finding #2 (CPT 49568)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- OCR PREVIEW AREA WITH HIGHLIGHTS -->
+                                <div class="settings-section-card">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                                        <div style="font-weight: 700; color: #fff; font-size: 0.92rem;">OCR Document Text Preview</div>
+                                        <span class="badge badge-success">100% Extracted</span>
+                                    </div>
+
+                                    <div id="ocr-document-view" style="background: rgba(10,15,26,0.9); border: 1px solid rgba(255,255,255,0.08); padding: 18px; border-radius: 8px; font-size: 0.88rem; line-height: 1.8; color: #cbd5e1; font-family: monospace; max-height: 380px; overflow-y: auto;">
+                                        <p style="margin: 0 0 10px 0;"><strong>PATIENT DISCHARGE & OPERATIVE SUMMARY REPORT</strong></p>
+                                        <p style="margin: 0 0 10px 0;">Patient Name: Sunita Verma | UHID: #UHID-90214 | DOS: 2026-07-28</p>
+                                        <p style="margin: 0 0 10px 0;">Attending Surgeon: Dr. Rajesh Sharma, MS (MCI-48192)</p>
+                                        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.08); margin: 12px 0;" />
+                                        <p style="margin: 0 0 10px 0;"><strong>CLINICAL NOTES & PROCEDURE LOG:</strong></p>
+                                        <p style="margin: 0 0 10px 0;">
+                                            <span id="ocr-finding-1" class="ocr-highlight-sentence">Outpatient Evaluation: Pre-op OPD consultation (CPT 99214) performed 3 hours prior to emergency laparoscopic surgery on 2026-07-28. Billed amount: ₹4,500.00.</span>
+                                        </p>
+                                        <p style="margin: 0 0 10px 0;">
+                                            Primary Surgical Procedure: Laparoscopic Cholecystectomy (CPT 47562) completed successfully under general anesthesia. Billed amount: ₹1,06,500.00.
+                                        </p>
+                                        <p style="margin: 0 0 10px 0;">
+                                            <span id="ocr-finding-2" class="ocr-highlight-sentence">Intraoperative Placement of Synthetic Surgical Mesh (CPT 49568) charged separately at ₹18,000.00.</span>
+                                        </p>
+                                        <p style="margin: 0;">Total Encounter Billed: ₹1,29,000.00.</p>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- BOTTOM STICKY PR MERGE BAR -->
+                    <div style="position: fixed; bottom: 0; left: 240px; right: 0; height: 65px; background: rgba(15,23,42,0.95); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; z-index: 200;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span class="badge badge-warning" id="pr-bottom-status-badge">2 Coding Issues Unresolved</span>
+                            <span style="font-weight: 700; color: #fff; font-size: 0.9rem;">Claim #CLM-2026-90124 (₹1,29,000.00)</span>
+                        </div>
+                        <div style="display: flex; gap: 12px;">
+                            <button class="btn btn-ghost btn-sm" onclick="alert('Claim draft saved successfully.')">Save Draft</button>
+                            <button class="btn btn-primary btn-sm" id="btn-submit-main" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700;" onclick="submitClaimFinal()">Submit Anyway</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. REDESIGNED MODERN SAAS SETTINGS PAGE -->
+                <div id="view-settings" class="dashboard-view">
+                    <div style="max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px;">
+                        
+                        <div>
+                            <h2 style="font-size: 1.3rem; font-weight: 800; color: #fff; margin-bottom: 4px;">Facility & Account Settings</h2>
+                            <p style="font-size: 0.9rem; color: #94a3b8;">Manage hospital profile details, team member roles, security settings, and integration options.</p>
+                        </div>
+
+                        <!-- SECTION 1: HOSPITAL INFORMATION -->
+                        <div class="settings-section-card">
+                            <div class="settings-card-header">
+                                <div class="settings-card-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16"></path><path d="M9 7h6"></path><path d="M9 11h6"></path><path d="M9 15h6"></path></svg>
+                                </div>
+                                <div>
+                                    <h3 class="settings-section-title">Hospital Information</h3>
+                                    <p class="settings-section-desc">Facility branding, legal address, and operational contact info.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-card-body">
+                                <div class="form-grid-2">
+                                    <div class="form-group">
+                                        <label class="form-label">Hospital Name</label>
+                                        <input type="text" class="form-input" value="Apollo Multispecialty Hospital & Research Center" />
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Contact Number</label>
+                                        <input type="text" class="form-input" value="+91 (022) 4910-8800" />
+                                    </div>
+                                </div>
+
+                                <div class="form-group" style="margin-top: 16px;">
+                                    <label class="form-label">Hospital Logo</label>
+                                    <div style="display: flex; align-items: center; gap: 18px;">
+                                        <div style="width: 56px; height: 56px; border-radius: 12px; background: linear-gradient(135deg, #00f2fe, #4facfe); display: flex; align-items: center; justify-content: center; font-weight: 800; color: #000; font-size: 1.2rem;">
+                                            AMH
+                                        </div>
+                                        <div style="display: flex; gap: 10px;">
+                                            <button class="btn btn-ghost btn-sm" onclick="alert('Upload new hospital logo...')">Upload New Logo</button>
+                                            <button class="btn btn-ghost btn-sm" style="color: #ef4444; border-color: rgba(239,68,68,0.3);" onclick="alert('Logo removed.')">Remove</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group" style="margin-top: 16px;">
+                                    <label class="form-label">Address</label>
+                                    <textarea class="form-input" rows="2" style="resize: vertical;">Plot 14, Greams Road, Thousand Lights, Chennai, Tamil Nadu - 600006</textarea>
+                                </div>
+
+                                <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                                    <button class="btn btn-primary btn-sm" onclick="alert('Hospital Information saved successfully!')">Save Hospital Details</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTION 2: USERS & ROLES -->
+                        <div class="settings-section-card">
+                            <div class="settings-card-header" style="justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 14px;">
+                                    <div class="settings-card-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="settings-section-title">Users & Roles</h3>
+                                        <p class="settings-section-desc">Manage hospital staff access, invite team members, and configure permissions.</p>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary btn-sm" onclick="inviteUserModal()">+ Invite User</button>
+                            </div>
+
+                            <div class="settings-card-body">
+                                <div style="margin-bottom: 16px; font-weight: 700; font-size: 0.9rem; color: #fff;">Manage Users</div>
+                                <table class="settings-table">
+                                    <thead>
+                                        <tr>
+                                            <th>User Name</th>
+                                            <th>Role</th>
+                                            <th>Permissions</th>
+                                            <th>Status</th>
+                                            <th style="text-align: right;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <div style="font-weight: 600; color: #fff;">Dr. Rajesh Sharma</div>
+                                                <div style="font-size: 0.78rem; color: #64748b;">r.sharma@apollohealth.in</div>
+                                            </td>
+                                            <td><span class="badge badge-info">Hospital Admin</span></td>
+                                            <td>Full Access</td>
+                                            <td><span class="badge badge-success">Active</span></td>
+                                            <td style="text-align: right;"><button class="btn btn-ghost btn-sm" onclick="alert('Edit user settings for Dr. Rajesh Sharma')">Edit</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <div style="font-weight: 600; color: #fff;">Sarah Jenkins</div>
+                                                <div style="font-size: 0.78rem; color: #64748b;">s.jenkins@apollohealth.in</div>
+                                            </td>
+                                            <td><span class="badge" style="background: rgba(255,255,255,0.08); color: #e2e8f0;">Billing Clerk</span></td>
+                                            <td>Claims & Pre-Auth</td>
+                                            <td><span class="badge badge-success">Active</span></td>
+                                            <td style="text-align: right;"><button class="btn btn-ghost btn-sm" onclick="alert('Edit user settings for Sarah Jenkins')">Edit</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <div style="font-weight: 600; color: #fff;">Amitabh Sharma</div>
+                                                <div style="font-size: 0.78rem; color: #64748b;">a.sharma@apollohealth.in</div>
+                                            </td>
+                                            <td><span class="badge" style="background: rgba(255,255,255,0.08); color: #e2e8f0;">Appeals Officer</span></td>
+                                            <td>Appeals & Escalations</td>
+                                            <td><span class="badge badge-warning">Invited</span></td>
+                                            <td style="text-align: right;"><button class="btn btn-ghost btn-sm" onclick="alert('Resend invitation to Amitabh Sharma')">Resend</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.06);">
+                                    <div style="font-weight: 700; font-size: 0.9rem; color: #fff; margin-bottom: 8px;">Role Permissions Summary</div>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 8px;">
+                                            <div style="font-weight: 700; color: var(--accent-cyan); font-size: 0.85rem;">Hospital Admin</div>
+                                            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">Full administrative control, user invitations, and billing settings.</div>
+                                        </div>
+                                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 8px;">
+                                            <div style="font-weight: 700; color: #e2e8f0; font-size: 0.85rem;">Billing Clerk</div>
+                                            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">Upload claims, edit line items, and submit pre-authorizations.</div>
+                                        </div>
+                                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 8px;">
+                                            <div style="font-weight: 700; color: #e2e8f0; font-size: 0.85rem;">Appeals Officer</div>
+                                            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">Review denied claims, generate AI appeals, and submit reconsiderations.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTION 3: PASSWORD & SECURITY -->
+                        <div class="settings-section-card">
+                            <div class="settings-card-header">
+                                <div class="settings-card-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                </div>
+                                <div>
+                                    <h3 class="settings-section-title">Password & Security</h3>
+                                    <p class="settings-section-desc">Manage account password, two-factor authentication, and active session logout.</p>
+                                </div>
+                            </div>
+
+                            <div class="settings-card-body">
+                                <div style="font-weight: 700; font-size: 0.9rem; color: #fff; margin-bottom: 12px;">Change Password</div>
+                                <div class="form-grid-3">
+                                    <div class="form-group">
+                                        <label class="form-label">Current Password</label>
+                                        <input type="password" class="form-input" placeholder="••••••••••••" />
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">New Password</label>
+                                        <input type="password" class="form-input" placeholder="••••••••••••" />
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Confirm New Password</label>
+                                        <input type="password" class="form-input" placeholder="••••••••••••" />
+                                    </div>
+                                </div>
+                                <div style="margin-top: 12px; text-align: right;">
+                                    <button class="btn btn-ghost btn-sm" onclick="alert('Password updated successfully!')">Update Password</button>
+                                </div>
+
+                                <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between;">
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 0.9rem; color: #fff;">Two-Factor Authentication (2FA)</div>
+                                        <div style="font-size: 0.82rem; color: #94a3b8; margin-top: 2px;">Require TOTP authenticator code on every staff login.</div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span class="badge badge-success">Enabled (Authenticator App)</span>
+                                        <button class="btn btn-ghost btn-sm" onclick="alert('Configure 2FA preferences')">Manage 2FA</button>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between;">
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 0.9rem; color: #ef4444;">Session Logout</div>
+                                        <div style="font-size: 0.82rem; color: #94a3b8; margin-top: 2px;">Log out of your active session on this device.</div>
+                                    </div>
+                                    <button class="btn btn-sm" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); font-weight: 700; cursor: pointer;" onclick="if(confirm('Are you sure you want to log out?')) alert('Logged out successfully.');">Logout of Session</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTION 4: ADVANCED (COLLAPSED BY DEFAULT) -->
+                        <details class="settings-advanced-details">
+                            <summary class="settings-advanced-summary">
+                                <div style="display: flex; align-items: center; gap: 14px;">
+                                    <div class="settings-card-icon" style="background: rgba(255, 255, 255, 0.05); color: #94a3b8;">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="settings-section-title" style="color: #94a3b8;">Advanced Settings</h3>
+                                        <p class="settings-section-desc">API credentials, TPA insurance integrations, and webhook endpoints.</p>
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 0.85rem; font-weight: 600;">
+                                    <span>Expand</span>
+                                    <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                </div>
+                            </summary>
+
+                            <div class="settings-card-body" style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 20px; margin-top: 16px;">
+                                <!-- API KEYS -->
+                                <div style="margin-bottom: 24px;">
+                                    <div style="font-weight: 700; font-size: 0.9rem; color: #fff;">API Keys</div>
+                                    <div style="font-size: 0.82rem; color: #94a3b8; margin-top: 2px; margin-bottom: 12px;">Use API keys for automated EHR/EMR background sync integrations.</div>
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <input type="text" class="form-input font-mono" readonly value="ire_live_9f82a17384b0291ac4829103" style="max-width: 380px; background: rgba(0,0,0,0.4);" />
+                                        <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('ire_live_9f82a17384b0291ac4829103'); alert('API Key copied to clipboard!');">Copy Key</button>
+                                        <button class="btn btn-ghost btn-sm" onclick="alert('New API Key generated!')">Regenerate</button>
+                                    </div>
+                                </div>
+
+                                <!-- INSURANCE INTEGRATIONS -->
+                                <div style="margin-bottom: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.06);">
+                                    <div style="font-weight: 700; font-size: 0.9rem; color: #fff; margin-bottom: 10px;">Insurance Integrations (TPA Portals)</div>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+                                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 14px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                                            <div>
+                                                <div style="font-weight: 700; color: #fff; font-size: 0.88rem;">ICICI Lombard TPA</div>
+                                                <div style="font-size: 0.78rem; color: #64748b;">Direct API Gateway</div>
+                                            </div>
+                                            <span class="badge badge-success">Connected</span>
+                                        </div>
+                                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 14px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                                            <div>
+                                                <div style="font-weight: 700; color: #fff; font-size: 0.88rem;">Star Health Portal</div>
+                                                <div style="font-size: 0.78rem; color: #64748b;">Web Automation Engine</div>
+                                            </div>
+                                            <span class="badge badge-success">Connected</span>
+                                        </div>
+                                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 14px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                                            <div>
+                                                <div style="font-weight: 700; color: #fff; font-size: 0.88rem;">HDFC ERGO Health</div>
+                                                <div style="font-size: 0.78rem; color: #64748b;">FHIR R4 Connector</div>
+                                            </div>
+                                            <span class="badge badge-success">Connected</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- WEBHOOK SETTINGS -->
+                                <div style="padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.06);">
+                                    <div style="font-weight: 700; font-size: 0.9rem; color: #fff;">Webhook Settings</div>
+                                    <div style="font-size: 0.82rem; color: #94a3b8; margin-top: 2px; margin-bottom: 12px;">Receive HTTP POST payloads when claim statuses update.</div>
+                                    <div class="form-group">
+                                        <label class="form-label">Webhook Endpoint URL</label>
+                                        <input type="text" class="form-input" value="https://his.apollohealth.in/api/v1/ire-webhooks" />
+                                    </div>
+                                    <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+                                        <button class="btn btn-ghost btn-sm" onclick="alert('Test Webhook payload dispatched (200 OK)')">Send Test Webhook</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- COMMAND PALETTE SEARCH MODAL OVERLAY -->
+    <div class="cmd-search-modal-backdrop" id="cmd-modal-backdrop" onclick="if(event.target===this) closeCmdPalette()">
+        <div class="cmd-palette-box">
+            <div class="cmd-search-input-wrapper">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" class="cmd-search-input" id="cmd-search-field" placeholder="Search Claims, Patients, Doctors..." oninput="filterCmdSearch(this.value)">
+                <span class="kbd-badge" style="cursor: pointer;" onclick="closeCmdPalette()">Esc</span>
+            </div>
+            <div class="cmd-results-list" id="cmd-results-container"></div>
+        </div>
+    </div>
+
+    <script src="js/hospital_workspace.js"></script>
+</body>
+</html>

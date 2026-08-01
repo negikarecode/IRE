@@ -1,0 +1,16 @@
+filebeat.inputs:
+  - type: filestream
+    id: ire-app-logs
+    enabled: true
+    paths:
+      - /var/log/ire/*.log
+      - /tmp/ire_logs/*.log
+    json.keys_under_root: true
+    json.add_error_key: true
+
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"]
+  index: "filebeat-ire-production-%{+yyyy.MM.dd}"
+
+setup.kibana:
+  host: "http://kibana:5601"

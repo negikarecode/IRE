@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package ire.v1;
+
+option go_package = "github.com/ire/gen/v1;irev1";
+
+service ReasoningEngine {
+  rpc EvaluateRules (RuleEvaluationRequest) returns (RuleEvaluationResponse);
+}
+
+service AIAgentService {
+  rpc ExecuteAgentWorkflow (AgentWorkflowRequest) returns (AgentWorkflowResponse);
+}
+
+message RuleEvaluationRequest {
+  string tenant_id = 1;
+  string claim_id = 2;
+  string payload_json = 3;
+}
+
+message RuleEvaluationResponse {
+  string evaluation_id = 1;
+  bool is_compliant = 2;
+  string recommended_action = 3;
+  string traces_json = 4;
+}
+
+message AgentWorkflowRequest {
+  string tenant_id = 1;
+  string claim_id = 2;
+  string prompt_context_json = 3;
+}
+
+message AgentWorkflowResponse {
+  string summary = 1;
+  double confidence_score = 2;
+  bool requires_hitl = 3;
+}

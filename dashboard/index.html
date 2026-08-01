@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRE — Hospital Revenue Intelligence & AI Claim Review Platform (India)</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .landing-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .landing-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 80px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .landing-nav {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .landing-nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .landing-nav a:hover {
+            color: #fff;
+        }
+
+        .hero-section {
+            padding: 90px 0 60px;
+            text-align: center;
+        }
+
+        .hero-title {
+            font-size: 3.2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        .hero-sub {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 760px;
+            margin: 0 auto 36px;
+            line-height: 1.6;
+        }
+
+        .hero-cta-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin: 80px 0;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 28px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-icon-box {
+            width: 44px;
+            height: 44px;
+            background: rgba(0, 242, 254, 0.1);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .auth-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 15, 26, 0.88);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .auth-modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .auth-modal-card {
+            width: 100%;
+            max-width: 480px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 32px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            color: #fff;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-cyan);
+        }
+
+        /* Password SVG Eye Toggle Wrapper */
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.15s ease;
+        }
+
+        .password-toggle-btn:hover {
+            color: var(--accent-cyan);
+        }
+
+        @media (max-width: 900px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            .hero-title {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <div class="landing-container">
+        <!-- Header Nav -->
+        <header class="landing-header">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="logo-icon hospital-logo">
+                    <span style="font-weight: 800; color: #fff;">IRE</span>
+                </div>
+                <span style="font-weight: 800; font-size: 1.1rem; color: #fff;">Hospital Revenue Intelligence (India)</span>
+            </div>
+
+            <nav class="landing-nav">
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+                <button class="btn btn-ghost" onclick="openLoginModal()">Sign In</button>
+                <button class="btn btn-primary" onclick="openRegisterModal()">Start Free Trial</button>
+            </nav>
+        </header>
+
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <h1 class="hero-title">Upload, Review, Fix and Submit Insurance Claims 10x Faster</h1>
+            <p class="hero-sub">The purpose-built SaaS revenue intelligence workspace for Indian hospital billing teams, TPA managers, and Chief Financial Officers.</p>
+            <div class="hero-cta-group">
+                <button class="btn btn-primary" style="padding: 14px 32px; font-size: 1rem;" onclick="openRegisterModal()">Start Hospital Free Trial →</button>
+                <button class="btn btn-ghost" style="padding: 14px 28px; font-size: 1rem;" onclick="openLoginModal()">Sign In to Hospital Workspace</button>
+            </div>
+        </section>
+
+        <!-- Features Grid -->
+        <section id="features" class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon-box">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                </div>
+                <h3 style="color: #fff; margin-bottom: 8px;">Instant Document Ingestion</h3>
+                <p class="text-sub">Drag and drop clinical discharge summaries, operative notes, and itemized bills for 100% automated OCR layout extraction.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-box">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                </div>
+                <h3 style="color: #fff; margin-bottom: 8px;">Pre-Submission Scrubber</h3>
+                <p class="text-sub">Catch medical coding errors, missing pre-authorization IDs, and ICD-10 mismatches before claims hit Star Health, HDFC ERGO, or PM-JAY portals.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-box">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><line x1="6" y1="18" x2="18" y2="18"></line><line x1="12" y1="2" x2="12" y2="18"></line><polyline points="3 8 6 13 9 8"></polyline><polyline points="15 8 18 13 21 8"></polyline></svg>
+                </div>
+                <h3 style="color: #fff; margin-bottom: 8px;">Automated Reconsideration Appeals</h3>
+                <p class="text-sub">Draft formal, evidence-backed reconsideration appeal packages for rejected cashless or reimbursement claims in Indian Rupees (₹).</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- HOSPITAL REGISTRATION MODAL -->
+    <div class="auth-modal-overlay" id="register-modal" onclick="if(event.target===this) closeRegisterModal()">
+        <div class="auth-modal-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="font-size: 1.25rem; font-weight: 800; color: #fff;">Register Your Hospital</h2>
+                <span style="cursor: pointer; color: var(--text-muted);" onclick="closeRegisterModal()">✕</span>
+            </div>
+            <div id="register-error" style="display: none; background: rgba(239,68,68,0.15); border: 1px solid var(--accent-red); color: var(--accent-red); padding: 10px; border-radius: 6px; margin-bottom: 14px; font-size: 0.85rem;"></div>
+
+            <form onsubmit="handleHospitalRegister(event)">
+                <div class="form-group">
+                    <label class="form-label">Hospital / Facility Name</label>
+                    <input type="text" id="reg-hospital-name" class="form-control" placeholder="Apollo Multispecialty Hospital" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Facility Type</label>
+                    <select id="reg-facility-type" class="form-control">
+                        <option value="Inpatient Hospital">Inpatient Hospital</option>
+                        <option value="Ambulatory Surgery Center">Ambulatory Surgery Center</option>
+                        <option value="Outpatient Clinic">Outpatient Clinic</option>
+                        <option value="Health System">Health System</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ROHINI ID / Hospital Registration No. (Optional)</label>
+                    <input type="text" id="reg-npi" class="form-control" placeholder="ROH-89021489">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Admin Email Address</label>
+                    <input type="email" id="reg-email" class="form-control" placeholder="cfo@apollohealth.in" required>
+                </div>
+
+                <!-- Password Field with SVG Eye Icon Toggle -->
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="reg-password" class="form-control" placeholder="••••••••" minlength="6" required style="padding-right: 40px;">
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('reg-password', this)" title="Toggle Password Visibility">
+                            <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Confirm Password Field with SVG Eye Icon Toggle -->
+                <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="reg-confirm-password" class="form-control" placeholder="••••••••" minlength="6" required style="padding-right: 40px;">
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('reg-confirm-password', this)" title="Toggle Password Visibility">
+                            <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">Create Hospital & Provision Admin →</button>
+            </form>
+            <div style="text-align: center; margin-top: 16px; font-size: 0.85rem;" class="text-sub">
+                Already registered? <a href="#" style="color: var(--accent-cyan);" onclick="closeRegisterModal(); openLoginModal();">Sign In</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIGN IN MODAL -->
+    <div class="auth-modal-overlay" id="login-modal" onclick="if(event.target===this) closeLoginModal()">
+        <div class="auth-modal-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="font-size: 1.25rem; font-weight: 800; color: #fff;">Sign In to Hospital Workspace</h2>
+                <span style="cursor: pointer; color: var(--text-muted);" onclick="closeLoginModal()">✕</span>
+            </div>
+            <div id="login-error" style="display: none; background: rgba(239,68,68,0.15); border: 1px solid var(--accent-red); color: var(--accent-red); padding: 10px; border-radius: 6px; margin-bottom: 14px; font-size: 0.85rem;"></div>
+
+            <form onsubmit="handleHospitalLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" id="login-email" class="form-control" placeholder="cfo@apollohealth.in" required>
+                </div>
+
+                <!-- Sign In Password Field with SVG Eye Icon Toggle -->
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="login-password" class="form-control" placeholder="••••••••" required style="padding-right: 40px;">
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('login-password', this)" title="Toggle Password Visibility">
+                            <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; font-size: 0.82rem;">
+                    <label style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary); cursor: pointer;">
+                        <input type="checkbox" id="login-remember"> Remember me
+                    </label>
+                    <a href="#" style="color: var(--accent-cyan);" onclick="closeLoginModal(); openForgotModal();">Forgot Password?</a>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">Sign In to Workspace →</button>
+            </form>
+            <div style="text-align: center; margin-top: 16px; font-size: 0.85rem;" class="text-sub">
+                Need a hospital workspace? <a href="#" style="color: var(--accent-cyan);" onclick="closeLoginModal(); openRegisterModal();">Register Hospital</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORGOT PASSWORD MODAL -->
+    <div class="auth-modal-overlay" id="forgot-modal" onclick="if(event.target===this) closeForgotModal()">
+        <div class="auth-modal-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="font-size: 1.25rem; font-weight: 800; color: #fff;">Reset Your Password</h2>
+                <span style="cursor: pointer; color: var(--text-muted);" onclick="closeForgotModal()">✕</span>
+            </div>
+            <div id="forgot-msg" style="display: none; background: rgba(16,185,129,0.15); border: 1px solid var(--accent-green); color: var(--accent-green); padding: 10px; border-radius: 6px; margin-bottom: 14px; font-size: 0.85rem;"></div>
+
+            <form onsubmit="handleForgotPassword(event)">
+                <div class="form-group">
+                    <label class="form-label">Admin Email Address</label>
+                    <input type="email" id="forgot-email" class="form-control" placeholder="cfo@apollohealth.in" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">Send Password Reset Link →</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8000/api/v1/auth";
+
+        function openRegisterModal() { document.getElementById("register-modal").classList.add("open"); }
+        function closeRegisterModal() { document.getElementById("register-modal").classList.remove("open"); }
+        function openLoginModal() { document.getElementById("login-modal").classList.add("open"); }
+        function closeLoginModal() { document.getElementById("login-modal").classList.remove("open"); }
+        function openForgotModal() { document.getElementById("forgot-modal").classList.add("open"); }
+        function closeForgotModal() { document.getElementById("forgot-modal").classList.remove("open"); }
+
+        /* See Password SVG Visibility Toggle Handler */
+        function togglePasswordVisibility(inputId, toggleBtn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            if (input.type === "password") {
+                input.type = "text";
+                toggleBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+            } else {
+                input.type = "password";
+                toggleBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+            }
+        }
+
+        function extractBackendError(data) {
+            if (!data) return "Network connection error.";
+            if (typeof data.detail === "string") return data.detail;
+            if (Array.isArray(data.detail)) {
+                return data.detail.map(err => {
+                    const loc = err.loc ? err.loc.slice(-1)[0] : "Field";
+                    return `${loc}: ${err.msg}`;
+                }).join("; ");
+            }
+            return "Registration error encountered.";
+        }
+
+        async function handleHospitalRegister(e) {
+            e.preventDefault();
+            const errBox = document.getElementById("register-error");
+            errBox.style.display = "none";
+
+            const hName = document.getElementById("reg-hospital-name").value;
+            const fType = document.getElementById("reg-facility-type").value;
+            const npi = document.getElementById("reg-npi").value;
+            const email = document.getElementById("reg-email").value;
+            const pass = document.getElementById("reg-password").value;
+            const confirmPass = document.getElementById("reg-confirm-password").value;
+
+            if (pass !== confirmPass) {
+                errBox.textContent = "Validation Error: Passwords do not match.";
+                errBox.style.display = "block";
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/hospitals/register`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        hospital_name: hName,
+                        facility_type: fType,
+                        npi_number: npi || undefined,
+                        email: email,
+                        password: pass,
+                        confirm_password: confirmPass,
+                        admin_full_name: "Hospital Administrator"
+                    })
+                });
+
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    throw new Error(extractBackendError(data));
+                }
+
+                sessionStorage.setItem("ire_access_token", data.access_token);
+                sessionStorage.setItem("ire_hospital_id", data.hospital_id);
+                sessionStorage.setItem("ire_user_email", email);
+
+                window.location.href = "hospital-workspace.html#dashboard";
+            } catch (err) {
+                errBox.textContent = err.message;
+                errBox.style.display = "block";
+            }
+        }
+
+        async function handleHospitalLogin(e) {
+            e.preventDefault();
+            const errBox = document.getElementById("login-error");
+            errBox.style.display = "none";
+
+            const email = document.getElementById("login-email").value;
+            const pass = document.getElementById("login-password").value;
+            const remember = document.getElementById("login-remember").checked;
+
+            try {
+                const res = await fetch(`${API_URL}/hospitals/login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password: pass, remember_me: remember })
+                });
+
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    throw new Error(extractBackendError(data));
+                }
+
+                const storage = remember ? localStorage : sessionStorage;
+                storage.setItem("ire_access_token", data.access_token);
+                storage.setItem("ire_hospital_id", data.hospital_id);
+                storage.setItem("ire_user_email", email);
+
+                window.location.href = "hospital-workspace.html#dashboard";
+            } catch (err) {
+                errBox.textContent = err.message;
+                errBox.style.display = "block";
+            }
+        }
+
+        function handleForgotPassword(e) {
+            e.preventDefault();
+            const msg = document.getElementById("forgot-msg");
+            msg.textContent = "Password reset instructions have been dispatched to your email.";
+            msg.style.display = "block";
+        }
+    </script>
+</body>
+</html>

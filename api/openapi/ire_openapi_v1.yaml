@@ -1,0 +1,278 @@
+openapi: 3.0.3
+info:
+  title: Insurance Reasoning Engine (IRE) API Specification
+  description: API-First Enterprise Architecture Specification for Multi-tenant Healthcare SaaS Platform
+  version: 1.0.0
+servers:
+  - url: https://api.ire.health/v1
+    description: Production API Gateway
+  - url: http://localhost:8000/v1
+    description: Local Development Environment
+
+headers:
+  X-Tenant-ID:
+    schema:
+      type: string
+    required: true
+    description: Mandatory tenant identifier for multi-tenant isolation routing.
+
+paths:
+  /tenants:
+    post:
+      summary: Register a new enterprise tenant
+      operationId: registerTenant
+      tags: [Tenant Management]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterTenantRequest'
+      responses:
+        '201':
+          description: Tenant provisioned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantResponse'
+
+  /ingest/claims:
+    post:
+      summary: Ingest raw claims payload (FHIR R4 / EDI 837 / Custom JSON)
+      operationId: ingestClaimPayload
+      tags: [Ingestion]
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestClaimRequest'
+      responses:
+        '202':
+          description: Claim payload accepted and queued for processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestionResponse'
+
+  /claims/{claimId}/adjudicate:
+    post:
+      summary: Adjudicate claim via Pluggable Rule Engine & AI Agents
+      operationId: adjudicateClaim
+      tags: [Claim Lifecycle]
+      parameters:
+        - in: path
+          name: claimId
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdjudicateClaimRequest'
+      responses:
+        '200':
+          description: Claim adjudication decision rendered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdjudicationResponse'
+
+  /reasoning/evaluate:
+    post:
+      summary: Evaluate claim against registered AST/WASM Rule Plugins
+      operationId: evaluateRules
+      tags: [Reasoning Engine]
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleEvaluationRequest'
+      responses:
+        '200':
+          description: Rule evaluation execution traces returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleEvaluationResult'
+
+  /agents/orchestrate:
+    post:
+      summary: Execute Autonomous AI Agent reasoning workflow
+      operationId: runAIAgent
+      tags: [AI Agent Orchestration]
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentTaskRequest'
+      responses:
+        '200':
+          description: Agent reasoning task output and HITL status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentTaskResponse'
+
+  /audit/logs:
+    get:
+      summary: Query immutable cryptographic audit ledger logs
+      operationId: queryAuditLogs
+      tags: [Audit & Compliance]
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: resourceId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Audit ledger entries with SHA-256 hash proofs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuditLogRecord'
+
+components:
+  schemas:
+    RegisterTenantRequest:
+      type: object
+      required: [tenantId, name, slug, isolationStrategy]
+      properties:
+        tenantId:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        isolationStrategy:
+          type: string
+          enum: [SCHEMA_PER_TENANT, ROW_LEVEL_SECURITY, DATABASE_PER_TENANT]
+
+    TenantResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+
+    IngestClaimRequest:
+      type: object
+      required: [sourceSystem, format, payload]
+      properties:
+        sourceSystem:
+          type: string
+        format:
+          type: string
+          enum: [FHIR_R4, EDI_837, CUSTOM_JSON]
+        payload:
+          type: object
+
+    IngestionResponse:
+      type: object
+      properties:
+        payloadId:
+          type: string
+        status:
+          type: string
+
+    AdjudicateClaimRequest:
+      type: object
+      required: [ruleResult, confidenceScore]
+      properties:
+        ruleResult:
+          type: object
+        confidenceScore:
+          type: number
+
+    AdjudicationResponse:
+      type: object
+      properties:
+        claimId:
+          type: string
+        status:
+          type: string
+
+    RuleEvaluationRequest:
+      type: object
+      required: [claimId, claimPayload]
+      properties:
+        claimId:
+          type: string
+        claimPayload:
+          type: object
+
+    RuleEvaluationResult:
+      type: object
+      properties:
+        evaluationId:
+          type: string
+        isCompliant:
+          type: boolean
+        recommendedAction:
+          type: string
+
+    AgentTaskRequest:
+      type: object
+      required: [claimId, conversationHistory]
+      properties:
+        claimId:
+          type: string
+        conversationHistory:
+          type: array
+          items:
+            type: object
+
+    AgentTaskResponse:
+      type: object
+      properties:
+        summary:
+          type: string
+        reasoningSteps:
+          type: array
+          items:
+            type: object
+
+    AuditLogRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        actorId:
+          type: string
+        currentHash:
+          type: string

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRE Platform Console — Internal Employee Management</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="dark-theme">
+    <div class="app-layout">
+        <!-- Internal Console Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon platform-logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <span class="brand-name">IRE Platform Console</span>
+                    <span class="brand-sub">Internal Employee Portal</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">TENANTS & HOSPITALS</div>
+                <a href="#hospitals-management" class="nav-item active" data-tab="hospitals-management">
+                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                    <span>Hospital Management</span>
+                </a>
+                <a href="#tenant-management" class="nav-item" data-tab="tenant-management">
+                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+                    <span>Tenant Management</span>
+                </a>
+
+                <div class="nav-section-title">AI & OCR TELEMETRY</div>
+                <a href="#ai-gateway" class="nav-item" data-tab="ai-gateway">
+                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect></svg>
+                    <span>AI Gateway</span>
+                </a>
+                <a href="#provider-health" class="nav-item" data-tab="provider-health">
+                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    <span>Provider Health</span>
+                </a>
+                <a href="#llm-costs" class="nav-item" data-tab="llm-costs">
+                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    <span>LLM Costs & Token Usage</span>
+                </a>
+                <a href="#ocr-usage" class="nav-item" data-tab="ocr-usage">
+                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>
+                    <span>OCR Extraction Usage</span>
+                </a>
+
+                <div class="nav-section-title">INFRASTRUCTURE & SECURITY</div>
+                <a href="#platform-analytics" class="nav-item" data-tab="platform-analytics">
+                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line></svg>
+                    <span>Platform Analytics</span>
+                </a>
+                <a href="#infrastructure-monitoring" class="nav-item" data-tab="infrastructure-monitoring">
+                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+                    <span>Infrastructure Monitoring</span>
+                </a>
+                <a href="#audit-ledger" class="nav-item" data-tab="audit-ledger">
+                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                    <span>Audit Ledger (SHA-256)</span>
+                </a>
+
+                <div class="nav-section-title">COMMERCIAL & DEVELOPER</div>
+                <a href="#subscriptions" class="nav-item" data-tab="subscriptions">
+                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path></svg>
+                    <span>Subscriptions & ARR</span>
+                </a>
+                <a href="#customer-support" class="nav-item" data-tab="customer-support">
+                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                    <span>Customer Support</span>
+                    <span class="badge badge-warning">2 Tickets</span>
+                </a>
+                <a href="#billing" class="nav-item" data-tab="billing">
+                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect></svg>
+                    <span>Billing & Overages</span>
+                </a>
+                <a href="#developer-tools" class="nav-item" data-tab="developer-tools">
+                    <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                    <span>Developer Tools & SDK</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="hospital-workspace.html" class="app-switch-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline></svg>
+                    <span>Launch Customer Product</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header Bar -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h1 class="page-title" id="page-title">Hospital Management</h1>
+                    <span class="badge badge-accent">INTERNAL PLATFORM CONSOLE (EMPLOYEES ONLY)</span>
+                </div>
+                <div class="header-right">
+                    <div class="tenant-selector">
+                        <select id="console-tenant-filter" class="tenant-select">
+                            <option value="ALL">All Enterprise Tenants (148)</option>
+                            <option value="acme_health">Acme Health Inc.</option>
+                            <option value="metro_care">Metro Care System</option>
+                            <option value="apex_org">Apex Enterprise</option>
+                        </select>
+                    </div>
+                    <div class="user-profile">
+                        <div class="avatar platform-avatar">IRE</div>
+                        <div class="user-info">
+                            <span class="user-name">Alex Rivera</span>
+                            <span class="user-role">Platform Operator</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dynamic Views Container -->
+            <div class="content-body">
+                
+                <!-- 1. Hospital Management -->
+                <div id="view-hospitals-management" class="dashboard-view active">
+                    <div class="card table-card">
+                        <div class="card-header">
+                            <h3>All Registered Hospital Facilities (Across All Tenants)</h3>
+                            <button class="btn btn-primary">+ Connect Hospital Facility</button>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Hospital Name</th>
+                                    <th>NPI Number</th>
+                                    <th>Assigned Tenant</th>
+                                    <th>Bed Capacity</th>
+                                    <th>EHR Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Metro General Hospital</td>
+                                    <td class="font-mono">1982736450</td>
+                                    <td><span class="badge badge-accent">metro_care</span></td>
+                                    <td>5,000 Beds</td>
+                                    <td><span class="badge badge-success">ONLINE (EPIC)</span></td>
+                                    <td><a href="hospital-workspace.html" class="btn btn-sm btn-ghost">View Customer Product</a></td>
+                                </tr>
+                                <tr>
+                                    <td>St. Jude Medical Center</td>
+                                    <td class="font-mono">1209384756</td>
+                                    <td><span class="badge badge-accent">acme_health</span></td>
+                                    <td>3,200 Beds</td>
+                                    <td><span class="badge badge-success">ONLINE (CERNER)</span></td>
+                                    <td><button class="btn btn-sm btn-ghost">Manage Facility</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2. Tenant Management -->
+                <div id="view-tenant-management" class="dashboard-view">
+                    <div class="card">
+                        <h3>Tenant Provisioning & Database Isolation Policy</h3>
+                        <div class="form-group margin-top">
+                            <label style="display:block; margin-bottom: 6px; color: var(--text-secondary);">Organization Name</label>
+                            <input type="text" class="input-text" placeholder="e.g. Apex Health Enterprise" style="width: 100%; max-width: 500px;">
+                        </div>
+                        <div class="form-group margin-top">
+                            <label style="display:block; margin-bottom: 6px; color: var(--text-secondary);">Isolation Policy</label>
+                            <select class="tenant-select" style="width: 100%; max-width: 500px;">
+                                <option value="ROW_LEVEL">Row-Level Security (RLS) Shared PostgreSQL</option>
+                                <option value="SCHEMA">Isolated Database Schema Per Tenant</option>
+                                <option value="DEDICATED">Dedicated RDS PostgreSQL Cluster</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary margin-top">Provision Enterprise Tenant</button>
+                    </div>
+                </div>
+
+                <!-- 3. AI Gateway -->
+                <div id="view-ai-gateway" class="dashboard-view">
+                    <div class="card">
+                        <h3>Multi-Provider LLM Gateway Configuration</h3>
+                        <div class="provider-row margin-top"><span>OpenAI Adapter (GPT-4o)</span><span class="badge badge-success">PRIMARY ROUTE</span></div>
+                        <div class="provider-row"><span>Google Gemini Adapter (Gemini 1.5 Pro)</span><span class="badge badge-success">PRIMARY ROUTE</span></div>
+                        <div class="provider-row"><span>Anthropic Adapter (Claude 3.5 Sonnet)</span><span class="badge badge-success">PRIMARY ROUTE</span></div>
+                        <div class="provider-row"><span>Local Ollama Adapter (Llama3 vLLM)</span><span class="badge badge-info">FALLBACK ROUTE</span></div>
+                    </div>
+                </div>
+
+                <!-- 4. Provider Health -->
+                <div id="view-provider-health" class="dashboard-view">
+                    <div class="card">
+                        <h3>LLM Provider Health & Real-time Latency Probes</h3>
+                        <div class="kpi-grid margin-top">
+                            <div class="kpi-card"><div class="kpi-title">OpenAI GPT-4o Latency</div><div class="kpi-value">180 ms</div><div class="kpi-sub green">99.98% Uptime</div></div>
+                            <div class="kpi-card"><div class="kpi-title">Gemini 1.5 Pro Latency</div><div class="kpi-value">210 ms</div><div class="kpi-sub green">99.99% Uptime</div></div>
+                            <div class="kpi-card"><div class="kpi-title">Claude 3.5 Sonnet Latency</div><div class="kpi-value">195 ms</div><div class="kpi-sub green">99.95% Uptime</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. LLM Costs -->
+                <div id="view-llm-costs" class="dashboard-view">
+                    <div class="card">
+                        <h3>LLM Cost & Token Consumption Analytics</h3>
+                        <div class="kpi-grid margin-top">
+                            <div class="kpi-card"><div class="kpi-title">Daily Token Ingestion</div><div class="kpi-value">42.8M Tokens</div><div class="kpi-sub green">Across 4 Providers</div></div>
+                            <div class="kpi-card"><div class="kpi-title">Daily Provider Costs</div><div class="kpi-value">$778.00</div><div class="kpi-sub green">Saved $1,240 via Cache</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. OCR Usage -->
+                <div id="view-ocr-usage" class="dashboard-view">
+                    <div class="card">
+                        <h3>Document OCR Processing Telemetry</h3>
+                        <div class="kpi-grid margin-top">
+                            <div class="kpi-card"><div class="kpi-title">Pages Processed Today</div><div class="kpi-value">124,500 Pages</div><div class="kpi-sub green">Avg 180ms / page</div></div>
+                            <div class="kpi-card"><div class="kpi-title">Table Grids Extracted</div><div class="kpi-value">34,120 Grids</div><div class="kpi-sub">Matrix Extraction</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. Platform Analytics -->
+                <div id="view-platform-analytics" class="dashboard-view">
+                    <div class="card">
+                        <h3>Global Platform Throughput & API Event Stream</h3>
+                        <div class="kpi-grid margin-top">
+                            <div class="kpi-card"><div class="kpi-title">Platform Daily Events</div><div class="kpi-value">4.8M Events</div><div class="kpi-sub">HL7, FHIR, API Stream</div></div>
+                            <div class="kpi-card"><div class="kpi-title">API P99 Latency</div><div class="kpi-value">42 ms</div><div class="kpi-sub green">Sub-100ms SLA</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. Infrastructure Monitoring -->
+                <div id="view-infrastructure-monitoring" class="dashboard-view">
+                    <div class="card">
+                        <h3>Infrastructure Microservices Status</h3>
+                        <div class="monitoring-grid margin-top">
+                            <div class="mon-card"><span>Tenant Identity Service</span><span class="badge badge-success">Healthy (Port 3001)</span></div>
+                            <div class="mon-card"><span>Ingestion Pipeline Service</span><span class="badge badge-success">Healthy (Port 3002)</span></div>
+                            <div class="mon-card"><span>Claim Lifecycle Service</span><span class="badge badge-success">Healthy (Port 3003)</span></div>
+                            <div class="mon-card"><span>Rule Reasoning Engine</span><span class="badge badge-success">Healthy (Port 3004)</span></div>
+                            <div class="mon-card"><span>AI Agent Service</span><span class="badge badge-success">Healthy (Port 3005)</span></div>
+                            <div class="mon-card"><span>Audit Ledger Service</span><span class="badge badge-success">Healthy (Port 3006)</span></div>
+                            <div class="mon-card"><span>Notification Service</span><span class="badge badge-success">Healthy (Port 3007)</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 9. Audit Ledger -->
+                <div id="view-audit-ledger" class="dashboard-view">
+                    <div class="card">
+                        <h3>Cryptographic SHA-256 Platform Audit Ledger</h3>
+                        <pre class="log-terminal margin-top">
+[2026-08-01 10:14:01] EVENT=TenantCreated TENANT=acme_health HASH=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+[2026-08-01 10:14:05] EVENT=RuleEvaluated TENANT=metro_care RULE=founder_rule_vip HASH=8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4
+[2026-08-01 10:14:08] EVENT=PluginLoaded PLUGIN=founder_risk_default TYPE=risk_engines HASH=4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce
+                        </pre>
+                    </div>
+                </div>
+
+                <!-- 10. Subscriptions -->
+                <div id="view-subscriptions" class="dashboard-view">
+                    <div class="card">
+                        <h3>Enterprise Tenant Subscriptions & ARR Tracking</h3>
+                        <div class="kpi-grid margin-top">
+                            <div class="kpi-card"><div class="kpi-title">Platform ARR</div><div class="kpi-value">$2.4M ARR</div><div class="kpi-sub green">99.4% NRR</div></div>
+                            <div class="kpi-card"><div class="kpi-title">Active Enterprise Plans</div><div class="kpi-value">48 Tenants</div><div class="kpi-sub green">+4 this month</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 11. Customer Support -->
+                <div id="view-customer-support" class="dashboard-view">
+                    <div class="card">
+                        <h3>Customer Support & Incident Escalation Queue</h3>
+                        <div class="notification-list margin-top">
+                            <div class="notif-item">
+                                <div><span class="notif-title">Ticket #4092: Acme Health EHR FHIR sync delay</span><div class="text-sub">Assigned to: Escalations Team • Priority: HIGH</div></div>
+                                <span class="badge badge-warning">IN_PROGRESS</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 12. Billing -->
+                <div id="view-billing" class="dashboard-view">
+                    <div class="card">
+                        <h3>Enterprise Monthly Invoicing & Overages</h3>
+                        <table class="data-table margin-top">
+                            <thead><tr><th>Tenant</th><th>Plan</th><th>Base Monthly</th><th>Overages</th><th>Status</th></tr></thead>
+                            <tbody>
+                                <tr><td>Acme Health Inc.</td><td>Enterprise Custom</td><td>$45,000 / mo</td><td>$4,250.00</td><td><span class="badge badge-success">PAID</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 13. Developer Tools -->
+                <div id="view-developer-tools" class="dashboard-view">
+                    <div class="card">
+                        <h3>Founder A Business Logic SDK & Plugin Registry</h3>
+                        <p class="text-sub">9 Extension Points: rules, validators, risk_engines, policy_providers, medical_extractors, reasoning_pipelines, agents, appeal_engines, package_validators.</p>
+                        <div class="margin-top">
+                            <a href="http://localhost:8000/docs" target="_blank" class="btn btn-primary">Open Interactive API Docs (Swagger) →</a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="js/platform_console.js"></script>
+</body>
+</html>
